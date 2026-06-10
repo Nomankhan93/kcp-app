@@ -12,8 +12,8 @@ export function LeadershipMessages() {
       />
 
       <section className="mx-auto grid max-w-6xl gap-8 px-4 py-8 sm:px-6 lg:px-8">
-        {leadershipMessages.map((message, index) => (
-          <LeadershipMessageCard key={message.id} message={message} reverse={index % 2 === 1} />
+        {leadershipMessages.map((message) => (
+          <LeadershipMessageCard key={message.id} message={message} reverse={message.id === 'mpa'} />
         ))}
       </section>
     </>

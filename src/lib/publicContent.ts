@@ -60,23 +60,6 @@ export const siteInfo = {
 
 export const leadershipMessages: LeadershipMessage[] = [
   {
-    id: 'chairman',
-    eyebrow: 'Chairman Message',
-    title: 'Message from the Chairman',
-    name: 'Chairman, Town Committee Kunri',
-    designation: 'Town Committee Kunri',
-    subtitle: 'Public service, transparency and timely complaint resolution for Kunri citizens.',
-    imageUrl: '/leadership/chairman-town-committee-kunri.jpg',
-    imageAlt: 'Chairman Town Committee Kunri official office photo',
-    imageFit: 'cover',
-    paragraphs: [
-      'Kunri Citizens Portal is proposed as a digital public service platform for Town Committee Kunri. The aim is to make municipal complaint submission, tracking and communication easier for citizens.',
-      'Through this portal, citizens will be able to submit complaints related to sanitation, street lights, drainage, water supply, roads and other municipal services. Each complaint will receive a tracking number for follow-up.',
-      'Official notices, news updates, public forms and certificate service information can also be published here after approval by the competent authority of Town Committee Kunri.',
-    ],
-    note: "Draft text. Replace with the Chairman's approved official message and name before public launch.",
-  },
-  {
     id: 'mpa',
     eyebrow: 'Public Representative Message',
     title: 'Message from the Member Provincial Assembly',
@@ -93,9 +76,26 @@ export const leadershipMessages: LeadershipMessage[] = [
     ],
     note: 'Draft text. Add approved official name/message only after written confirmation from the MPA office.',
   },
+  {
+    id: 'chairman',
+    eyebrow: 'Chairman Message',
+    title: 'Message from the Chairman',
+    name: 'Chairman, Town Committee Kunri',
+    designation: 'Town Committee Kunri',
+    subtitle: 'Public service, transparency and timely complaint resolution for Kunri citizens.',
+    imageUrl: '/leadership/chairman-town-committee-kunri.jpg',
+    imageAlt: 'Chairman Town Committee Kunri official office photo',
+    imageFit: 'cover',
+    paragraphs: [
+      'Kunri Citizens Portal is proposed as a digital public service platform for Town Committee Kunri. The aim is to make municipal complaint submission, tracking and communication easier for citizens.',
+      'Through this portal, citizens will be able to submit complaints related to sanitation, street lights, drainage, water supply, roads and other municipal services. Each complaint will receive a tracking number for follow-up.',
+      'Official notices, news updates, public forms and certificate service information can also be published here after approval by the competent authority of Town Committee Kunri.',
+    ],
+    note: "Draft text. Replace with the Chairman's approved official message and name before public launch.",
+  },
 ];
 
-export const chairmanMessage = leadershipMessages[0];
+export const chairmanMessage = leadershipMessages.find((message) => message.id === 'chairman') ?? leadershipMessages[1];
 
 export const quickFacts: PublicCardItem[] = [
   {
