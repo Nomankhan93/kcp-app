@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
-import { Building2, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { useState } from 'react';
 
 const navItems = [
@@ -26,13 +26,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header className="sticky top-0 z-30 border-b border-emerald-100 bg-white/95 shadow-sm backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-          <Link to="/" className="flex flex-none items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-civic-700 text-white shadow-sm">
-              <Building2 className="h-6 w-6" aria-hidden="true" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-civic-700">Town Committee</p>
-              <h1 className="text-lg font-bold leading-tight text-slate-950 sm:text-xl">Kunri Citizens Portal</h1>
+          <Link to="/" className="flex flex-none items-center gap-3" aria-label="Kunri Citizens Portal home">
+            <img
+              src="/logo.png"
+              alt="Town Committee Kunri logo"
+              className="h-12 w-12 rounded-2xl object-contain shadow-sm sm:h-14 sm:w-14"
+              width={56}
+              height={56}
+            />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-civic-700 sm:text-sm">
+                Town Committee
+              </p>
+              <h1 className="truncate text-lg font-bold leading-tight text-slate-950 sm:text-xl">
+                Kunri Citizens Portal
+              </h1>
             </div>
           </Link>
 
