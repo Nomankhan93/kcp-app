@@ -331,3 +331,58 @@ export async function updateCertificateApplication(input: AdminCertificateUpdate
 
   if (error) throw error;
 }
+
+export type CouncilorProfile = WardCouncilorRow | null;
+
+export type CouncilorReviewAction = 'verified' | 'rejected' | 'need_correction';
+
+export type CouncilorReviewInput = {
+  applicationId: string;
+  action: CouncilorReviewAction;
+  councilorRemarks: string;
+  publicRemarks?: string;
+};
+
+export async function fetchCurrentWardCouncilor(): Promise<CouncilorProfile> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError) throw userError;
+
+  const userId = userData.user?.id;
+  if (!userId) return null;
+
+  const { data, error } = await supabase
+    .from('ward_councilors')
+    .select('id, user_id, full_name, ward, mobile, designation, is_active')
+    .eq('user_id', userId)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data ?? null) as CouncilorProfile;
+}
+
+export async function fetchCouncilorCertificateApplications(): Promise<CertificateApplicationRow[]> {
+  const { data, error } = await supabase
+    .from('certificate_applications')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as CertificateApplicationRow[];
+}
+
+export async function councilorReviewCertificateApplication(input: CouncilorReviewInput) {
+  const remarks = input.councilorRemarks.trim();
+  if (!remarks) {
+    throw new Error('Councilor remarks are required for verification responsibility record.');
+  }
+
+  const { error } = await supabase.rpc('councilor_review_certificate_application_v1', {
+    p_application_id: input.applicationId,
+    p_action: input.action,
+    p_councilor_remarks: remarks,
+    p_public_remarks: emptyToNull(input.publicRemarks),
+  });
+
+  if (error) throw error;
+}

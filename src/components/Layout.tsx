@@ -13,6 +13,7 @@ const navItems = [
   { to: '/contact', label: 'Contact' },
   { to: '/certificates/apply', label: 'Apply Certificate' },
   { to: '/certificates/track', label: 'Track Certificate' },
+  { to: '/councilor/certificates', label: 'Councilor' },
   { to: '/submit', label: 'Submit Complaint' },
   { to: '/track', label: 'Track' },
   { to: '/admin', label: 'Admin' },

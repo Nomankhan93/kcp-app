@@ -1,22 +1,22 @@
-# Leadership Message Order Patch
+# Certificate Ward Verification v1
 
-## Changes
+## Added
 
-- Moved MPA/Public Representative message above the Chairman message on `/leadership-messages`.
-- Home page leadership cards now show MPA first because the shared `leadershipMessages` data order is updated.
-- Fixed `chairmanMessage` export so `/chairman-message` still opens the Chairman message after reordering.
-- Kept MPA layout with text on the left and image on the right in desktop view.
+- 10 ward setup for Town Committee Kunri.
+- Limited `general_councilor` role workflow.
+- Ward-based General Councilor assignment table seeding.
+- `/councilor/certificates` dashboard.
+- `/councilor/certificates/:id` verification detail page.
+- General Councilor can only access applications from their assigned ward.
+- Verify / Reject / Need Correction actions with required remarks.
+- Public status timeline updated after councilor verification.
 
-## Test
+## Changed
 
-```bash
-npm run typecheck
-npm run build
-npm run dev -- --port 3001
-```
+- Certificate area fallback now includes Ward 01 to Ward 10.
+- Header navigation includes Councilor dashboard link.
+- App routes include protected councilor routes.
 
-Open:
+## SQL
 
-- `http://localhost:3001/leadership-messages`
-- `http://localhost:3001/chairman-message`
-- `http://localhost:3001`
+Run `supabase/certificate-ward-verification-v1.sql` on Kunri backend port `55322`.
