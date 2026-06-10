@@ -1,0 +1,23 @@
+project_id = "kunri-citizens-portal"
+
+[api]
+port = 55321
+
+[db]
+port = 55322
+shadow_port = 55320
+
+[db.pooler]
+port = 55329
+
+[studio]
+port = 55323
+
+[inbucket]
+port = 55324
+
+[analytics]
+port = 55327
+
+[edge_runtime]
+inspector_port = 55326
