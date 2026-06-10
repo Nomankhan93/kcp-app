@@ -20,6 +20,8 @@ import { ChairmanDashboard } from './pages/ChairmanDashboard';
 import { CertificateApply } from './pages/CertificateApply';
 import { CertificateTrack } from './pages/CertificateTrack';
 import { Contact } from './pages/Contact';
+import { CouncilorCertificateDetail } from './pages/CouncilorCertificateDetail';
+import { CouncilorCertificates } from './pages/CouncilorCertificates';
 import { Downloads } from './pages/Downloads';
 import { Home } from './pages/Home';
 import { LeadershipMessages } from './pages/LeadershipMessages';
@@ -62,6 +64,8 @@ export default function App() {
           <Route path="/admin/certificates/:id" element={<AdminCertificateDetail />} />
           <Route path="/admin/complaints/:id" element={<AdminComplaintDetail />} />
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/councilor/certificates" element={<CouncilorCertificates />} />
+          <Route path="/councilor/certificates/:id" element={<CouncilorCertificateDetail />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
