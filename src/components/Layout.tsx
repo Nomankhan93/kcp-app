@@ -31,6 +31,7 @@ const citizenServiceItems: NavItem[] = [
 
 const staffAccessItems: NavItem[] = [
   { to: '/admin', label: 'Admin Dashboard', matchPrefix: true },
+  { to: '/admin/content', label: 'Public CMS', matchPrefix: true },
   { to: '/councilor/certificates', label: 'Councilor Dashboard', matchPrefix: true },
 ];
 

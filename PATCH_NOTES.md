@@ -1,25 +1,24 @@
-# Certificate Final Processing & Delivery v2
+# Public CMS v1 Patch
 
 ## Added
 
-- `/admin/certificates/final-processing` office queue.
-- Final processing stats: verified waiting, in processing, uploaded, ready.
-- Improved certificate detail page for office processing.
-- Certificate number validation before delivery/completion.
-- Prepared certificate upload validation before uploaded/ready/delivered statuses.
-- Citizen tracking download/view link for issued certificates.
-- Public tracking RPC v2 that exposes only the issued certificate path after tracking number + mobile match.
-- Storage read policy for `issued-certificates` only.
+- Public CMS database schema and storage bucket.
+- Admin content dashboard.
+- Public notices management.
+- News / updates management.
+- Downloads / forms upload management.
+- Leadership messages management.
+- Public pages now load CMS content with static fallback.
+- Staff Login menu includes Public CMS.
+
+## New routes
+
+- `/admin/content`
+- `/admin/content/notices`
+- `/admin/content/news`
+- `/admin/content/downloads`
+- `/admin/content/messages`
 
 ## SQL
 
-Run:
-
-```bash
-PGPASSWORD=postgres psql \
-  -h 127.0.0.1 \
-  -p 55322 \
-  -U postgres \
-  -d postgres \
-  -f supabase/certificate-final-processing-v2.sql
-```
+Run `supabase/public-cms-v1.sql` on Kunri Supabase.

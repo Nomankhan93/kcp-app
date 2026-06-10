@@ -2,6 +2,11 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { About } from './pages/About';
 import { AdminComplaintDetail } from './pages/AdminComplaintDetail';
+import { AdminContent } from './pages/AdminContent';
+import { AdminContentDownloads } from './pages/AdminContentDownloads';
+import { AdminContentMessages } from './pages/AdminContentMessages';
+import { AdminContentNews } from './pages/AdminContentNews';
+import { AdminContentNotices } from './pages/AdminContentNotices';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminLogin } from './pages/AdminLogin';
 import { AdminReports } from './pages/AdminReports';
@@ -43,6 +48,11 @@ export default function App() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/chairman-dashboard" element={<ChairmanDashboard />} />
           <Route path="/admin/reports" element={<AdminReports />} />
+          <Route path="/admin/content" element={<AdminContent />} />
+          <Route path="/admin/content/notices" element={<AdminContentNotices />} />
+          <Route path="/admin/content/news" element={<AdminContentNews />} />
+          <Route path="/admin/content/downloads" element={<AdminContentDownloads />} />
+          <Route path="/admin/content/messages" element={<AdminContentMessages />} />
           <Route path="/admin/certificates" element={<AdminCertificates />} />
           <Route path="/admin/certificates/final-processing" element={<AdminCertificateFinalProcessing />} />
           <Route path="/admin/certificates/:id" element={<AdminCertificateDetail />} />

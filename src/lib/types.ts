@@ -233,3 +233,67 @@ export type PublicCertificateApplication = {
   created_at: string;
   updated_at: string;
 };
+
+export type CmsStatus = 'draft' | 'published';
+
+export type CmsNoticeRow = {
+  id: string;
+  title: string;
+  description: string;
+  notice_date: string;
+  attachment_path: string | null;
+  attachment_url: string | null;
+  status: CmsStatus;
+  is_featured: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CmsNewsRow = {
+  id: string;
+  title: string;
+  summary: string;
+  body: string | null;
+  image_path: string | null;
+  image_url: string | null;
+  published_at: string;
+  status: CmsStatus;
+  is_featured: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CmsDownloadRow = {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  file_path: string | null;
+  file_url: string | null;
+  file_name: string | null;
+  status: CmsStatus;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CmsLeadershipMessageRow = {
+  id: string;
+  message_key: string;
+  eyebrow: string;
+  title: string;
+  full_name: string;
+  designation: string;
+  subtitle: string;
+  message_text: string;
+  note: string | null;
+  image_path: string | null;
+  image_url: string | null;
+  image_alt: string | null;
+  image_fit: 'cover' | 'contain';
+  display_order: number;
+  status: CmsStatus;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
