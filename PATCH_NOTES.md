@@ -1,22 +1,29 @@
-# Certificate Ward Verification v1
+# Patch Notes: KCP Header Logo Patch
 
-## Added
+## Summary
 
-- 10 ward setup for Town Committee Kunri.
-- Limited `general_councilor` role workflow.
-- Ward-based General Councilor assignment table seeding.
-- `/councilor/certificates` dashboard.
-- `/councilor/certificates/:id` verification detail page.
-- General Councilor can only access applications from their assigned ward.
-- Verify / Reject / Need Correction actions with required remarks.
-- Public status timeline updated after councilor verification.
+- Added official-style header logo image assets.
+- Replaced the generic header icon with `/logo.png`.
+- Kept `Town Committee` and `Kunri Citizens Portal` as responsive HTML text.
+- Added `public/logo-horizontal.png` for future use.
 
-## Changed
+## Files changed
 
-- Certificate area fallback now includes Ward 01 to Ward 10.
-- Header navigation includes Councilor dashboard link.
-- App routes include protected councilor routes.
+- `src/components/Layout.tsx`
+- `public/logo.png`
+- `public/logo-horizontal.png`
+- `docs/HEADER_LOGO.md`
 
-## SQL
+## Test
 
-Run `supabase/certificate-ward-verification-v1.sql` on Kunri backend port `55322`.
+```bash
+npm run typecheck
+npm run build
+npm run dev -- --port 3001
+```
+
+Open:
+
+```text
+http://localhost:3001
+```
