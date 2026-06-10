@@ -1,29 +1,25 @@
-# Patch Notes: KCP Header Logo Patch
+# Certificate Final Processing & Delivery v2
 
-## Summary
+## Added
 
-- Added official-style header logo image assets.
-- Replaced the generic header icon with `/logo.png`.
-- Kept `Town Committee` and `Kunri Citizens Portal` as responsive HTML text.
-- Added `public/logo-horizontal.png` for future use.
+- `/admin/certificates/final-processing` office queue.
+- Final processing stats: verified waiting, in processing, uploaded, ready.
+- Improved certificate detail page for office processing.
+- Certificate number validation before delivery/completion.
+- Prepared certificate upload validation before uploaded/ready/delivered statuses.
+- Citizen tracking download/view link for issued certificates.
+- Public tracking RPC v2 that exposes only the issued certificate path after tracking number + mobile match.
+- Storage read policy for `issued-certificates` only.
 
-## Files changed
+## SQL
 
-- `src/components/Layout.tsx`
-- `public/logo.png`
-- `public/logo-horizontal.png`
-- `docs/HEADER_LOGO.md`
-
-## Test
+Run:
 
 ```bash
-npm run typecheck
-npm run build
-npm run dev -- --port 3001
-```
-
-Open:
-
-```text
-http://localhost:3001
+PGPASSWORD=postgres psql \
+  -h 127.0.0.1 \
+  -p 55322 \
+  -U postgres \
+  -d postgres \
+  -f supabase/certificate-final-processing-v2.sql
 ```

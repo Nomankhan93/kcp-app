@@ -77,7 +77,7 @@ export const certificateStatusLabels = {
   councilor_review: 'Councilor Review',
   councilor_verified: 'Councilor Verified',
   councilor_rejected: 'Councilor Rejected',
-  town_review: 'Town Review',
+  town_review: 'Under Office Processing',
   need_more_info: 'Need Correction / More Info',
   certificate_uploaded: 'Certificate Uploaded',
   ready_for_collection: 'Ready for Collection',

@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, FileUp, Loader2, RefreshCw, Save } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Download, FileCheck2, FileUp, Loader2, RefreshCw, Save, ShieldCheck } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import {
   checkCertificateAccess,
@@ -26,6 +26,15 @@ type SessionState = 'checking' | 'signed-out' | 'signed-in';
 type AccessRole = 'admin' | 'chairman' | 'staff' | 'general_councilor' | null;
 
 const statusOptions = Object.entries(certificateStatusLabels) as Array<[CertificateApplicationStatus, string]>;
+const officeStatusOptions: Array<[CertificateApplicationStatus, string]> = [
+  ['councilor_verified', 'Councilor Verified'],
+  ['town_review', 'Under Office Processing'],
+  ['need_more_info', 'Need Correction / More Info'],
+  ['certificate_uploaded', 'Certificate Uploaded'],
+  ['ready_for_collection', 'Ready for Collection'],
+  ['delivered', 'Delivered / Completed'],
+  ['rejected', 'Rejected by Town Office'],
+];
 
 function getFormValue(form: FormData, key: string) {
   return String(form.get(key) || '').trim();
@@ -34,6 +43,10 @@ function getFormValue(form: FormData, key: string) {
 function formatDateTime(value: string | null) {
   if (!value) return '—';
   return new Date(value).toLocaleString();
+}
+
+function isOfficeQueueStatus(status: CertificateApplicationStatus) {
+  return ['councilor_verified', 'town_review', 'certificate_uploaded', 'ready_for_collection'].includes(status);
 }
 
 export function AdminCertificateDetail() {
@@ -54,6 +67,7 @@ export function AdminCertificateDetail() {
 
   const canTownUpdate = role === 'admin' || role === 'chairman' || role === 'staff';
   const canCouncilorVerify = role === 'admin' || role === 'chairman' || role === 'general_councilor';
+  const issuedDocument = documents.find((document) => document.kind === 'issued_certificate');
 
   const sameWardCouncilors = useMemo(() => {
     if (!application) return councilors;
@@ -62,21 +76,26 @@ export function AdminCertificateDetail() {
 
   useEffect(() => {
     async function init() {
-      const access = await checkCertificateAccess();
+      try {
+        const access = await checkCertificateAccess();
 
-      if (!access.signedIn) {
-        setSessionState('signed-out');
-        setLoading(false);
-        return;
-      }
+        if (!access.signedIn) {
+          setSessionState('signed-out');
+          setLoading(false);
+          return;
+        }
 
-      setSessionState('signed-in');
-      setAllowed(access.allowed);
-      setRole(access.role);
+        setSessionState('signed-in');
+        setAllowed(access.allowed);
+        setRole(access.role);
 
-      if (access.allowed) {
-        await loadAll();
-      } else {
+        if (access.allowed) {
+          await loadAll();
+        } else {
+          setLoading(false);
+        }
+      } catch (initError) {
+        setError(initError instanceof Error ? initError.message : 'Unable to check access.');
         setLoading(false);
       }
     }
@@ -147,6 +166,14 @@ export function AdminCertificateDetail() {
     let issuedPath = application.issued_certificate_path;
 
     try {
+      if (canTownUpdate && ['certificate_uploaded', 'ready_for_collection', 'delivered'].includes(nextStatus) && !issuedPath && !issuedFile) {
+        throw new Error('Please upload the prepared certificate before marking it as uploaded, ready or delivered.');
+      }
+
+      if (canTownUpdate && nextStatus === 'delivered' && !getFormValue(form, 'certificateNumber')) {
+        throw new Error('Certificate number is required before marking the application as delivered/completed.');
+      }
+
       if (issuedFile && canTownUpdate) {
         issuedUpload = await uploadIssuedCertificateFile(application.id, issuedFile);
         issuedPath = issuedUpload.storage_path;
@@ -167,7 +194,7 @@ export function AdminCertificateDetail() {
         issuedUpload,
       );
 
-      setSuccess('Certificate application updated successfully.');
+      setSuccess('Certificate application updated successfully. Citizen tracking will show the latest public status.');
       setIssuedFile(null);
       await loadAll();
     } catch (saveError) {
@@ -182,16 +209,21 @@ export function AdminCertificateDetail() {
   return (
     <>
       <PageHeader
-        eyebrow="Certificate Application"
+        eyebrow="Certificate Final Processing"
         title={application ? application.tracking_no : 'Application detail'}
-        description="Verify ward details, review documents, update public status and upload the prepared certificate."
+        description="Town Committee staff can complete final office processing, add the certificate number, upload the prepared certificate and mark delivery/completion."
       />
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <Link to="/admin/certificates" className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Certificates
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/admin/certificates" className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+              <ArrowLeft className="mr-2 h-4 w-4" /> All Certificates
+            </Link>
+            <Link to="/admin/certificates/final-processing" className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+              <FileCheck2 className="mr-2 h-4 w-4" /> Final Processing Queue
+            </Link>
+          </div>
           <button type="button" onClick={loadAll} className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
             <RefreshCw className="mr-2 h-4 w-4" /> Refresh
           </button>
@@ -217,7 +249,7 @@ export function AdminCertificateDetail() {
         ) : null}
 
         {application ? (
-          <form onSubmit={handleSubmit} className="grid gap-6 xl:grid-cols-[1fr_420px]">
+          <form onSubmit={handleSubmit} className="grid gap-6 xl:grid-cols-[1fr_430px]">
             <div className="space-y-6">
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-5">
@@ -237,8 +269,24 @@ export function AdminCertificateDetail() {
                   <Info label="Relation / Address" value={`${application.applicant_relation || '—'}\n${application.applicant_address}`} />
                   <Info label="Area / Ward" value={`${application.area}\n${application.ward}${application.mohalla ? `\n${application.mohalla}` : ''}`} />
                   <Info label="Subject / Event" value={`${application.subject_name}\n${application.subject_cnic || 'No CNIC / B-form'}\n${new Date(application.event_date).toLocaleDateString()} · ${application.event_place}`} />
+                  <Info label="Certificate Number" value={application.certificate_number || 'Not issued yet'} />
+                  <Info label="Issued / Delivered" value={`Issued: ${formatDateTime(application.issued_at)}\nDelivered: ${formatDateTime(application.delivered_at)}`} />
                 </div>
               </div>
+
+              {isOfficeQueueStatus(application.status) ? (
+                <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-amber-950 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <ShieldCheck className="mt-0.5 h-5 w-5 flex-none" />
+                    <div>
+                      <h3 className="font-black">Final office processing required</h3>
+                      <p className="mt-1 text-sm leading-6">
+                        After ward verification, Town Committee office should verify records, prepare the official certificate, upload the signed/scanned certificate and then mark it ready or delivered.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
 
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h3 className="text-lg font-black text-slate-950">Submitted details</h3>
@@ -253,7 +301,7 @@ export function AdminCertificateDetail() {
                 <h3 className="text-lg font-black text-slate-950">Uploaded documents</h3>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {documents.map((document) => (
-                    <div key={document.id} className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                    <div key={document.id} className={`rounded-2xl p-4 ring-1 ${document.kind === 'issued_certificate' ? 'bg-emerald-50 ring-emerald-100' : 'bg-slate-50 ring-slate-200'}`}>
                       <p className="text-sm font-bold text-slate-950">{certificateDocumentLabels[document.kind]}</p>
                       <p className="mt-1 truncate text-xs text-slate-500">{document.file_name || document.storage_path}</p>
                       {documentUrls[document.id] ? (
@@ -269,13 +317,14 @@ export function AdminCertificateDetail() {
 
             <aside className="space-y-6">
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h3 className="text-lg font-black text-slate-950">Verification & certificate update</h3>
+                <h3 className="text-lg font-black text-slate-950">Final processing update</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-600">Use this panel after General Councilor verification. Public remarks will be visible on citizen tracking.</p>
 
                 <div className="mt-5 space-y-4">
                   <label className="block">
-                    <span className="text-sm font-semibold text-slate-700">Status</span>
+                    <span className="text-sm font-semibold text-slate-700">Office Status</span>
                     <select name="status" defaultValue={application.status} disabled={!canTownUpdate} className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none ring-civic-600 transition focus:ring-2 disabled:bg-slate-100">
-                      {statusOptions.map(([status, label]) => <option key={status} value={status}>{label}</option>)}
+                      {(canTownUpdate ? officeStatusOptions : statusOptions).map(([status, label]) => <option key={status} value={status}>{label}</option>)}
                     </select>
                   </label>
 
@@ -303,7 +352,7 @@ export function AdminCertificateDetail() {
 
                   <label className="block">
                     <span className="text-sm font-semibold text-slate-700">Certificate Number</span>
-                    <input name="certificateNumber" defaultValue={application.certificate_number ?? ''} disabled={!canTownUpdate} className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none ring-civic-600 transition focus:ring-2 disabled:bg-slate-100" />
+                    <input name="certificateNumber" defaultValue={application.certificate_number ?? ''} disabled={!canTownUpdate} placeholder="Example: TC-KUNRI-B-2026-001" className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none ring-civic-600 transition focus:ring-2 disabled:bg-slate-100" />
                   </label>
 
                   {canTownUpdate ? (
@@ -311,19 +360,19 @@ export function AdminCertificateDetail() {
                       <span className="flex items-center gap-2 text-sm font-bold text-slate-800">
                         <FileUp className="h-4 w-4 text-civic-700" /> Upload prepared certificate
                       </span>
-                      <span className="mt-1 text-xs text-slate-500">PDF/JPG/PNG/WEBP, max 10MB.</span>
+                      <span className="mt-1 text-xs text-slate-500">PDF/JPG/PNG/WEBP, max 10MB. This becomes available through citizen tracking.</span>
                       <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="sr-only" onChange={(event) => handleIssuedFileChange(event.target.files?.[0] ?? null)} />
                       {issuedFile ? <span className="mt-2 truncate text-xs font-semibold text-civic-700">Selected: {issuedFile.name}</span> : null}
                     </label>
                   ) : null}
 
-                  {application.issued_certificate_path ? <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">Certificate file already uploaded.</p> : null}
+                  {issuedDocument ? <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><CheckCircle2 className="mr-2 inline h-4 w-4" /> Prepared certificate has been uploaded.</p> : null}
                   {success ? <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{success}</p> : null}
                   {error ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</p> : null}
 
-                  <button type="submit" disabled={saving} className="inline-flex w-full items-center justify-center rounded-2xl bg-civic-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-civic-800 disabled:cursor-not-allowed disabled:opacity-70">
+                  <button type="submit" disabled={saving || allowed !== true} className="inline-flex w-full items-center justify-center rounded-2xl bg-civic-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-civic-800 disabled:cursor-not-allowed disabled:opacity-70">
                     {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Save Changes
+                    Save Final Processing
                   </button>
                 </div>
               </div>

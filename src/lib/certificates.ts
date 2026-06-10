@@ -221,10 +221,13 @@ export async function submitCertificateApplication(input: SubmitCertificateAppli
 }
 
 export async function trackCertificateApplication(trackingNo: string, mobile: string): Promise<CertificateTrackingResult> {
-  const { data, error } = await supabase.rpc('get_certificate_public_v1', {
+  const payload = {
     p_tracking_no: normalizeTrackingNo(trackingNo),
     p_mobile: normalizePhone(mobile),
-  });
+  };
+
+  const v2Result = await supabase.rpc('get_certificate_public_v2', payload);
+  const { data, error } = v2Result.error ? await supabase.rpc('get_certificate_public_v1', payload) : v2Result;
 
   if (error) throw error;
 
@@ -234,10 +237,7 @@ export async function trackCertificateApplication(trackingNo: string, mobile: st
     return { application: null, timeline: [] };
   }
 
-  const { data: timelineData, error: timelineError } = await supabase.rpc('get_certificate_public_timeline_v1', {
-    p_tracking_no: normalizeTrackingNo(trackingNo),
-    p_mobile: normalizePhone(mobile),
-  });
+  const { data: timelineData, error: timelineError } = await supabase.rpc('get_certificate_public_timeline_v1', payload);
 
   return {
     application: application as PublicCertificateApplication,
@@ -307,6 +307,19 @@ export async function createCertificateDocumentSignedUrl(path: string | null): P
 
   if (error) {
     console.warn('Unable to create signed URL for certificate document.', error.message);
+    return null;
+  }
+
+  return data?.signedUrl ?? null;
+}
+
+export async function createIssuedCertificateSignedUrl(path: string | null): Promise<string | null> {
+  if (!path) return null;
+
+  const { data, error } = await supabase.storage.from('certificate-documents').createSignedUrl(path, 60 * 15);
+
+  if (error) {
+    console.warn('Unable to create signed URL for issued certificate.', error.message);
     return null;
   }
 

@@ -227,6 +227,7 @@ export type PublicCertificateApplication = {
   event_place: string;
   public_remarks: string | null;
   certificate_number: string | null;
+  issued_certificate_path: string | null;
   issued_at: string | null;
   delivered_at: string | null;
   created_at: string;

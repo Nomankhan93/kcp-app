@@ -1,8 +1,8 @@
 import { FormEvent, useState } from 'react';
-import { Clock3, Loader2, Search } from 'lucide-react';
+import { Clock3, Download, FileCheck2, Loader2, Search } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { certificateStatusBadgeClasses, certificateStatusLabels, certificateTypeLabels } from '../lib/constants';
-import { trackCertificateApplication } from '../lib/certificates';
+import { createIssuedCertificateSignedUrl, trackCertificateApplication } from '../lib/certificates';
 import type { CertificateStatusHistoryRow, PublicCertificateApplication } from '../lib/types';
 
 export function CertificateTrack() {
@@ -10,6 +10,7 @@ export function CertificateTrack() {
   const [error, setError] = useState('');
   const [application, setApplication] = useState<PublicCertificateApplication | null>(null);
   const [timeline, setTimeline] = useState<CertificateStatusHistoryRow[]>([]);
+  const [issuedCertificateUrl, setIssuedCertificateUrl] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -17,6 +18,7 @@ export function CertificateTrack() {
     setError('');
     setApplication(null);
     setTimeline([]);
+    setIssuedCertificateUrl(null);
     setSearched(false);
     setLoading(true);
 
@@ -26,6 +28,11 @@ export function CertificateTrack() {
       const result = await trackCertificateApplication(String(form.get('trackingNo') || ''), String(form.get('mobile') || ''));
       setApplication(result.application);
       setTimeline(result.timeline);
+
+      if (result.application?.issued_certificate_path) {
+        setIssuedCertificateUrl(await createIssuedCertificateSignedUrl(result.application.issued_certificate_path));
+      }
+
       setSearched(true);
     } catch (trackError) {
       setError(trackError instanceof Error ? trackError.message : 'Unable to track certificate application.');
@@ -112,7 +119,20 @@ export function CertificateTrack() {
 
               {application.status === 'certificate_uploaded' || application.status === 'ready_for_collection' || application.status === 'delivered' ? (
                 <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-                  Certificate has been prepared/uploaded by Town Committee staff. Please follow the official collection/delivery process and verify details at the office if required.
+                  <div className="flex items-start gap-3">
+                    <FileCheck2 className="mt-0.5 h-5 w-5 flex-none" />
+                    <div>
+                      <p className="font-bold">Certificate prepared by Town Committee</p>
+                      <p className="mt-1">Please verify details carefully. Office collection/delivery rules may still apply.</p>
+                      {issuedCertificateUrl ? (
+                        <a href={issuedCertificateUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center rounded-xl bg-civic-700 px-3 py-2 text-xs font-bold text-white hover:bg-civic-800">
+                          <Download className="mr-1 h-3.5 w-3.5" /> Download / View Certificate
+                        </a>
+                      ) : application.issued_certificate_path ? (
+                        <p className="mt-2 text-xs font-semibold text-amber-800">Certificate file is available, but a secure download link could not be created. Please contact Town Committee office.</p>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
               ) : null}
             </div>
