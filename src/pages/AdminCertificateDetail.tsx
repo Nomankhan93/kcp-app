@@ -23,7 +23,7 @@ import type {
 } from '../lib/types';
 
 type SessionState = 'checking' | 'signed-out' | 'signed-in';
-type AccessRole = 'admin' | 'chairman' | 'staff' | 'general_councilor' | null;
+type AccessRole = 'admin' | 'chairman' | 'staff' | 'certificate_officer' | 'general_councilor' | null;
 
 const statusOptions = Object.entries(certificateStatusLabels) as Array<[CertificateApplicationStatus, string]>;
 const officeStatusOptions: Array<[CertificateApplicationStatus, string]> = [

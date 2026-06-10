@@ -17,7 +17,7 @@ type DateFilter = 'all' | 'today' | '7days' | '30days';
 type StatusFilter = 'all' | CertificateApplicationStatus;
 type TypeFilter = 'all' | CertificateType;
 
-type AccessRole = 'admin' | 'chairman' | 'staff' | 'general_councilor' | null;
+type AccessRole = 'admin' | 'chairman' | 'staff' | 'certificate_officer' | 'general_councilor' | null;
 
 const actionableStatuses: CertificateApplicationStatus[] = ['councilor_review', 'need_more_info'];
 

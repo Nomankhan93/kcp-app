@@ -10,6 +10,8 @@ import { AdminContentNotices } from './pages/AdminContentNotices';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminLogin } from './pages/AdminLogin';
 import { AdminReports } from './pages/AdminReports';
+import { AdminUsers } from './pages/AdminUsers';
+import { AdminWardCouncilors } from './pages/AdminWardCouncilors';
 import { AdminCertificateDetail } from './pages/AdminCertificateDetail';
 import { AdminCertificates } from './pages/AdminCertificates';
 import { AdminCertificateFinalProcessing } from './pages/AdminCertificateFinalProcessing';
@@ -48,6 +50,8 @@ export default function App() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/chairman-dashboard" element={<ChairmanDashboard />} />
           <Route path="/admin/reports" element={<AdminReports />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/ward-councilors" element={<AdminWardCouncilors />} />
           <Route path="/admin/content" element={<AdminContent />} />
           <Route path="/admin/content/notices" element={<AdminContentNotices />} />
           <Route path="/admin/content/news" element={<AdminContentNews />} />

@@ -32,6 +32,8 @@ const citizenServiceItems: NavItem[] = [
 const staffAccessItems: NavItem[] = [
   { to: '/admin', label: 'Admin Dashboard', matchPrefix: true },
   { to: '/admin/content', label: 'Public CMS', matchPrefix: true },
+  { to: '/admin/users', label: 'User Roles', matchPrefix: true },
+  { to: '/admin/ward-councilors', label: 'Ward Councilors', matchPrefix: true },
   { to: '/councilor/certificates', label: 'Councilor Dashboard', matchPrefix: true },
 ];
 

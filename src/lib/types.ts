@@ -1,3 +1,34 @@
+
+export type PortalRole = 'admin' | 'chairman' | 'staff' | 'certificate_officer' | 'general_councilor';
+
+export type PortalAuthUserRow = {
+  user_id: string;
+  email: string | null;
+  created_at: string | null;
+  last_sign_in_at: string | null;
+  roles: PortalRole[] | null;
+};
+
+export type PortalUserRoleRow = {
+  user_id: string;
+  email: string | null;
+  role: PortalRole;
+  created_at: string;
+};
+
+export type WardCouncilorManagementRow = {
+  id: string | null;
+  ward: string;
+  full_name: string | null;
+  user_id: string | null;
+  email: string | null;
+  mobile: string | null;
+  designation: string | null;
+  is_active: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
 export type ComplaintCategory =
   | 'sanitation'
   | 'street_lights'

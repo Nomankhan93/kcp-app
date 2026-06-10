@@ -15,7 +15,7 @@ import type {
 export type CertificateSessionCheck = {
   signedIn: boolean;
   allowed: boolean;
-  role: 'admin' | 'chairman' | 'staff' | 'general_councilor' | null;
+  role: 'admin' | 'chairman' | 'staff' | 'certificate_officer' | 'general_councilor' | null;
 };
 
 export type CertificateUploadFile = {
@@ -115,7 +115,7 @@ export async function checkCertificateAccess(): Promise<CertificateSessionCheck>
   const { data: roleData, error } = await supabase.rpc('current_portal_role');
   const role = asText(roleData) as CertificateSessionCheck['role'];
 
-  if (!error && (role === 'admin' || role === 'chairman' || role === 'staff' || role === 'general_councilor')) {
+  if (!error && (role === 'admin' || role === 'chairman' || role === 'staff' || role === 'certificate_officer' || role === 'general_councilor')) {
     return { signedIn: true, allowed: true, role };
   }
 

@@ -17,7 +17,7 @@ import { certificateDocumentLabels, certificateStatusBadgeClasses, certificateSt
 import type { CertificateApplicationRow, CertificateDocumentRow, CertificateStatusHistoryRow } from '../lib/types';
 
 type SessionState = 'checking' | 'signed-out' | 'signed-in';
-type AccessRole = 'admin' | 'chairman' | 'staff' | 'general_councilor' | null;
+type AccessRole = 'admin' | 'chairman' | 'staff' | 'certificate_officer' | 'general_councilor' | null;
 
 function formatDateTime(value: string | null) {
   if (!value) return '—';

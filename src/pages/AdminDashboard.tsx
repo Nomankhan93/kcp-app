@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { BarChart3, Eye, FileText, Loader2, LogOut, RefreshCw, Search } from 'lucide-react';
+import { BarChart3, Eye, FileText, Loader2, LogOut, RefreshCw, Search, UserCog, Users } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge } from '../components/StatusBadge';
 import { checkAdminAccess, fetchAdminComplaints } from '../lib/adminComplaints';
@@ -180,6 +180,22 @@ export function AdminDashboard() {
                     className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
                   >
                     <FileText className="mr-2 h-4 w-4" /> Public CMS
+                  </Link>
+                ) : null}
+                {(access.role === 'admin' || access.role === 'chairman') ? (
+                  <Link
+                    to="/admin/users"
+                    className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                  >
+                    <Users className="mr-2 h-4 w-4" /> User Roles
+                  </Link>
+                ) : null}
+                {(access.role === 'admin' || access.role === 'chairman') ? (
+                  <Link
+                    to="/admin/ward-councilors"
+                    className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                  >
+                    <UserCog className="mr-2 h-4 w-4" /> Ward Councilors
                   </Link>
                 ) : null}
                 {(access.role === 'admin' || access.role === 'chairman') ? (

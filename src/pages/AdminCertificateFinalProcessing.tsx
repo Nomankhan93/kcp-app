@@ -11,7 +11,7 @@ type DateFilter = 'all' | 'today' | '7days' | '30days';
 
 type AccessState = {
   allowed: boolean | null;
-  role: 'admin' | 'chairman' | 'staff' | 'general_councilor' | null;
+  role: 'admin' | 'chairman' | 'staff' | 'certificate_officer' | 'general_councilor' | null;
 };
 
 const typeOptions = Object.entries(certificateTypeLabels) as Array<[CertificateType, string]>;
@@ -44,7 +44,7 @@ export function AdminCertificateFinalProcessing() {
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [search, setSearch] = useState('');
 
-  const canUseFinalProcessing = access.role === 'admin' || access.role === 'chairman' || access.role === 'staff';
+  const canUseFinalProcessing = access.role === 'admin' || access.role === 'chairman' || access.role === 'staff' || access.role === 'certificate_officer';
 
   const officeQueue = useMemo(
     () => applications.filter((item) => queueStatuses.includes(item.status) || (item.councilor_status === 'verified' && item.status !== 'delivered')),
