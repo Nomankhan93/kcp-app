@@ -1,4 +1,4 @@
-# KCP Seed & Recovery SQL v1
+# Patch 4 — KCP Canonical Migration Chain v1
 
 ## Priority
 
@@ -6,40 +6,39 @@ High
 
 ## Purpose
 
-This patch adds clean seed/recovery SQL files for Kunri Citizens Portal so local/cloud Supabase environments can safely restore:
+This patch creates a canonical Supabase migration chain for Kunri Citizens Portal so local and cloud environments can be rebuilt in the same order with the same final DB behavior.
 
-- 10 wards
-- Public ward dropdown records
-- Complaint categories
-- Ward General Councilor assignments
-- `general_councilor` user roles
-- Admin and Chairman roles
-- Verification queries for roles and wards
-
-## Files added
+## Added files
 
 ```text
-supabase/seeds/001_seed_wards.sql
-supabase/seeds/002_seed_complaint_categories.sql
-supabase/seeds/003_seed_ward_councilors_template.sql
-supabase/seeds/004_seed_admin_chairman_template.sql
-supabase/seeds/005_verify_roles_and_wards.sql
-docs/SEED_AND_RECOVERY_SQL_V1.md
+supabase/migrations/001_initial_schema.sql
+supabase/migrations/002_complaints.sql
+supabase/migrations/003_certificates.sql
+supabase/migrations/004_councilor_verification.sql
+supabase/migrations/005_cms.sql
+supabase/migrations/006_citizen_auth_profile.sql
+supabase/migrations/007_security_hardening.sql
+docs/CANONICAL_MIGRATION_CHAIN_V1.md
+docs/archive/SUPABASE_LEGACY_PATCH_FILES.md
 PATCH_NOTES.md
+```
+
+## Final canonical order
+
+```text
+001_initial_schema.sql
+002_complaints.sql
+003_certificates.sql
+004_councilor_verification.sql
+005_cms.sql
+006_citizen_auth_profile.sql
+007_security_hardening.sql
 ```
 
 ## Important
 
-`003_seed_ward_councilors_template.sql` and `004_seed_admin_chairman_template.sql` are templates. Replace placeholder UUIDs with real Supabase Auth user UUIDs before running.
-
-The template files are fail-safe and will stop with an exception if placeholders remain.
-
-## Recommended run order
-
-```text
-1. supabase/seeds/001_seed_wards.sql
-2. supabase/seeds/002_seed_complaint_categories.sql
-3. Edit + run supabase/seeds/003_seed_ward_councilors_template.sql
-4. Edit + run supabase/seeds/004_seed_admin_chairman_template.sql
-5. supabase/seeds/005_verify_roles_and_wards.sql
-```
+- For an existing cloud database, do not reset production just to apply this migration chain.
+- Use this chain for clean local/cloud rebuilds and future deployments.
+- Migration `007_security_hardening.sql` is intentionally last because it locks the final role model and security policies.
+- Keep General Councilor certificate updates RPC-only.
+- Keep issued certificate files private.
