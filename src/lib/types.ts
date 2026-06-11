@@ -328,3 +328,43 @@ export type CmsLeadershipMessageRow = {
   created_at: string;
   updated_at: string;
 };
+
+export type CitizenProfileRow = {
+  user_id: string;
+  full_name: string | null;
+  mobile: string | null;
+  cnic: string | null;
+  address: string | null;
+  area: string | null;
+  ward: string | null;
+  mohalla: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CitizenComplaintSummaryRow = {
+  id: string;
+  tracking_no: string;
+  category: string;
+  area: string;
+  ward: string | null;
+  status: string;
+  public_remarks: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CitizenCertificateSummaryRow = {
+  id: string;
+  tracking_no: string;
+  certificate_type: string;
+  subject_name: string;
+  ward: string;
+  status: string;
+  public_remarks: string | null;
+  certificate_number: string | null;
+  issued_at: string | null;
+  delivered_at: string | null;
+  created_at: string;
+  updated_at: string;
+};

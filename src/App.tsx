@@ -19,6 +19,9 @@ import { ChairmanMessage } from './pages/ChairmanMessage';
 import { ChairmanDashboard } from './pages/ChairmanDashboard';
 import { CertificateApply } from './pages/CertificateApply';
 import { CertificateTrack } from './pages/CertificateTrack';
+import { CitizenDashboard } from './pages/CitizenDashboard';
+import { CitizenLogin } from './pages/CitizenLogin';
+import { CitizenProfile } from './pages/CitizenProfile';
 import { Contact } from './pages/Contact';
 import { CouncilorCertificateDetail } from './pages/CouncilorCertificateDetail';
 import { CouncilorCertificates } from './pages/CouncilorCertificates';
@@ -49,6 +52,9 @@ export default function App() {
           <Route path="/track" element={<TrackComplaint />} />
           <Route path="/certificates/apply" element={<CertificateApply />} />
           <Route path="/certificates/track" element={<CertificateTrack />} />
+          <Route path="/citizen/login" element={<CitizenLogin />} />
+          <Route path="/citizen/dashboard" element={<CitizenDashboard />} />
+          <Route path="/citizen/profile" element={<CitizenProfile />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/chairman-dashboard" element={<ChairmanDashboard />} />
           <Route path="/admin/reports" element={<AdminReports />} />

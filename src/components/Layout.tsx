@@ -23,6 +23,7 @@ const publicUpdateItems: NavItem[] = [
 ];
 
 const citizenServiceItems: NavItem[] = [
+  { to: '/citizen/dashboard', label: 'Citizen Login / Profile', matchPrefix: true },
   { to: '/submit', label: 'Submit Complaint' },
   { to: '/track', label: 'Track Complaint' },
   { to: '/certificates/apply', label: 'Apply Certificate' },
@@ -31,9 +32,6 @@ const citizenServiceItems: NavItem[] = [
 
 const staffAccessItems: NavItem[] = [
   { to: '/admin', label: 'Admin Dashboard', matchPrefix: true },
-  { to: '/admin/content', label: 'Public CMS', matchPrefix: true },
-  { to: '/admin/users', label: 'User Roles', matchPrefix: true },
-  { to: '/admin/ward-councilors', label: 'Ward Councilors', matchPrefix: true },
   { to: '/councilor/certificates', label: 'Councilor Dashboard', matchPrefix: true },
 ];
 

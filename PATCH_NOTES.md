@@ -1,37 +1,18 @@
-# Production Readiness & Deployment v1
+# Citizen Login / Profile System v1
 
-## Summary
+## Added
 
-This patch prepares Kunri Citizens Portal for Cloud Supabase + Vercel deployment.
-
-## Changed / added files
-
-- `.env.example`
-- `.env.production.example`
-- `.gitignore`
-- `vercel.json`
-- `package.json`
-- `README.md`
-- `public/robots.txt`
-- `public/sitemap.xml`
-- `src/App.tsx`
-- `supabase/production-readiness-v1.sql`
-- `docs/PRODUCTION_READINESS_DEPLOYMENT_V1.md`
-- `docs/CLOUD_SUPABASE_SETUP.md`
-- `docs/VERCEL_DEPLOYMENT_GUIDE.md`
-- `docs/SECURITY_ACCEPTANCE_CHECKLIST.md`
-- `docs/DEPLOYMENT_RUN_COMMANDS.md`
-
-## Important fix
-
-The Councilor Dashboard routes are now registered:
-
-- `/councilor/certificates`
-- `/councilor/certificates/:id`
+- Citizen login/signup page: `/citizen/login`
+- Citizen dashboard: `/citizen/dashboard`
+- Citizen profile page: `/citizen/profile`
+- Citizen profile database table and RLS policies
+- Citizen record linking for complaints and certificates
+- Claim old tracking records using tracking number + mobile number
+- Auto-link new complaint/certificate submissions when logged in
 
 ## SQL
 
-Run after all previous module SQL files:
+Run:
 
 ```bash
 PGPASSWORD=postgres psql \
@@ -39,12 +20,17 @@ PGPASSWORD=postgres psql \
   -p 55322 \
   -U postgres \
   -d postgres \
-  -f supabase/production-readiness-v1.sql
+  -f supabase/citizen-auth-profile-v1.sql
 ```
 
-## Test
+## Test checklist
 
-```bash
-npm run typecheck
-npm run build
-```
+1. Open `/citizen/login`.
+2. Signup a citizen user.
+3. Open `/citizen/profile` and save profile.
+4. Submit a new complaint while logged in.
+5. Open `/citizen/dashboard` and confirm complaint appears.
+6. Submit a certificate application while logged in.
+7. Confirm certificate appears on dashboard.
+8. Link an old tracking number with mobile using the claim form.
+9. Logout and confirm dashboard redirects to login.
