@@ -112,6 +112,42 @@ type EscalationItem = {
   tone: Tone;
 };
 
+
+type SlaBucketKey = "0-2" | "3-5" | "6-10" | "10+";
+
+type SlaBucketMetric = {
+  key: SlaBucketKey;
+  label: string;
+  helper: string;
+  complaints: number;
+  certificates: number;
+  councilorQueue: number;
+  officeQueue: number;
+  total: number;
+  tone: Tone;
+};
+
+type RecentActivityItem = {
+  id: string;
+  type: "Complaint" | "Certificate";
+  title: string;
+  trackingNo: string;
+  status: string;
+  ward: string;
+  time: string;
+  href: string;
+  tone: Tone;
+};
+
+type BottleneckAlert = {
+  id: string;
+  title: string;
+  helper: string;
+  value: number | string;
+  tone: Tone;
+  href: string;
+};
+
 const complaintClosedStatuses: ComplaintStatus[] = ["resolved", "rejected", "not_related"];
 const certificateClosedStatuses: CertificateApplicationStatus[] = ["delivered", "rejected"];
 const certificateCouncilorQueueStatuses: CertificateApplicationStatus[] = ["submitted", "councilor_review"];
@@ -129,6 +165,8 @@ const rangeLabels: Record<DateFilter, string> = {
   month: "This Month",
   all: "All Time",
 };
+
+const defaultWardNames = Array.from({ length: 10 }, (_, index) => `Ward ${String(index + 1).padStart(2, "0")}`);
 
 function startOfToday() {
   const now = new Date();
@@ -503,22 +541,179 @@ function buildEscalationItems(complaints: AdminComplaint[], certificates: Certif
     .slice(0, 10);
 }
 
+function getSlaBucketKey(ageDaysValue: number): SlaBucketKey {
+  if (ageDaysValue <= 2) return "0-2";
+  if (ageDaysValue <= 5) return "3-5";
+  if (ageDaysValue <= 10) return "6-10";
+  return "10+";
+}
+
+function buildSlaBuckets(complaints: AdminComplaint[], certificates: CertificateApplicationRow[]): SlaBucketMetric[] {
+  const base: Record<SlaBucketKey, SlaBucketMetric> = {
+    "0-2": { key: "0-2", label: "0–2 Days", helper: "Normal queue", complaints: 0, certificates: 0, councilorQueue: 0, officeQueue: 0, total: 0, tone: "good" },
+    "3-5": { key: "3-5", label: "3–5 Days", helper: "Needs follow-up", complaints: 0, certificates: 0, councilorQueue: 0, officeQueue: 0, total: 0, tone: "watch" },
+    "6-10": { key: "6-10", label: "6–10 Days", helper: "Delayed cases", complaints: 0, certificates: 0, councilorQueue: 0, officeQueue: 0, total: 0, tone: "danger" },
+    "10+": { key: "10+", label: "10+ Days", helper: "Chairman escalation", complaints: 0, certificates: 0, councilorQueue: 0, officeQueue: 0, total: 0, tone: "danger" },
+  };
+
+  for (const complaint of complaints) {
+    if (!isComplaintPending(complaint)) continue;
+    const bucket = base[getSlaBucketKey(Math.floor(ageInDays(complaint.created_at)))];
+    bucket.complaints += 1;
+    bucket.total += 1;
+  }
+
+  for (const certificate of certificates) {
+    if (!isCertificatePending(certificate)) continue;
+    const bucket = base[getSlaBucketKey(Math.floor(ageInDays(certificate.created_at)))];
+    bucket.certificates += 1;
+    bucket.total += 1;
+    if (certificateCouncilorQueueStatuses.includes(certificate.status)) bucket.councilorQueue += 1;
+    if (certificateOfficeQueueStatuses.includes(certificate.status)) bucket.officeQueue += 1;
+  }
+
+  return [base["0-2"], base["3-5"], base["6-10"], base["10+"]];
+}
+
+function buildRecentActivities(complaints: AdminComplaint[], certificates: CertificateApplicationRow[]): RecentActivityItem[] {
+  const complaintActivities = complaints.map<RecentActivityItem>((item) => ({
+    id: `complaint-${item.id}`,
+    type: "Complaint",
+    title: categoryLabels[item.category] ?? item.category,
+    trackingNo: item.tracking_no,
+    status: statusLabels[item.status],
+    ward: getComplaintWard(item),
+    time: item.updated_at || item.created_at,
+    href: `/admin/complaints/${item.id}`,
+    tone: item.status === "resolved" ? "good" : item.priority === "urgent" || item.priority === "high" ? "danger" : isComplaintOverdue(item) ? "watch" : "neutral",
+  }));
+
+  const certificateActivities = certificates.map<RecentActivityItem>((item) => ({
+    id: `certificate-${item.id}`,
+    type: "Certificate",
+    title: certificateTypeLabels[item.certificate_type],
+    trackingNo: item.tracking_no,
+    status: certificateStatusLabels[item.status],
+    ward: getCertificateWard(item),
+    time: item.updated_at || item.created_at,
+    href: `/admin/certificates/${item.id}`,
+    tone: item.status === "delivered" ? "good" : isCertificateOverdue(item) ? "danger" : certificateCouncilorQueueStatuses.includes(item.status) ? "watch" : "civic",
+  }));
+
+  return [...complaintActivities, ...certificateActivities]
+    .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+    .slice(0, 12);
+}
+
+function buildBottleneckAlerts({
+  complaintAnalytics,
+  certificateAnalytics,
+  wardMetrics,
+  councilorMetrics,
+  slaBuckets,
+}: {
+  complaintAnalytics: { overdue: number; unassigned: number; urgent: number };
+  certificateAnalytics: { councilorPending: number; officePending: number; overdue: number; needMoreInfo: number };
+  wardMetrics: WardMetric[];
+  councilorMetrics: CouncilorMetric[];
+  slaBuckets: SlaBucketMetric[];
+}): BottleneckAlert[] {
+  const weakestWard = wardMetrics[0];
+  const slowestCouncilor = councilorMetrics.find((item) => item.pending > 0);
+  const tenPlus = slaBuckets.find((item) => item.key === "10+")?.total ?? 0;
+
+  return [
+    {
+      id: "sla-10-plus",
+      title: "10+ day backlog",
+      helper: "Oldest unresolved service requests",
+      value: tenPlus,
+      tone: tenPlus ? "danger" : "good",
+      href: "/admin/reports",
+    },
+    {
+      id: "weakest-ward",
+      title: weakestWard ? `Highest risk ward: ${weakestWard.ward}` : "Highest risk ward",
+      helper: weakestWard ? `${weakestWard.overdue} overdue · ${weakestWard.councilorPending} councilor queue · ${weakestWard.officePending} office queue` : "No ward workload found",
+      value: weakestWard ? weakestWard.healthScore : "—",
+      tone: weakestWard && weakestWard.risk === "Critical" ? "danger" : weakestWard && weakestWard.risk === "Watch" ? "watch" : "good",
+      href: "/admin/reports",
+    },
+    {
+      id: "slowest-councilor",
+      title: slowestCouncilor ? `Councilor queue: ${slowestCouncilor.ward}` : "Councilor queue",
+      helper: slowestCouncilor ? `${slowestCouncilor.pending} pending · oldest ${slowestCouncilor.oldestPendingDays} days` : "No pending councilor verification",
+      value: slowestCouncilor?.pending ?? 0,
+      tone: slowestCouncilor && slowestCouncilor.oldestPendingDays >= 3 ? "danger" : slowestCouncilor ? "watch" : "good",
+      href: "/admin/certificates",
+    },
+    {
+      id: "office-bottleneck",
+      title: "Town office queue",
+      helper: `${certificateAnalytics.officePending} final-processing cases · ${certificateAnalytics.overdue} delayed certificates`,
+      value: certificateAnalytics.officePending,
+      tone: certificateAnalytics.overdue ? "danger" : certificateAnalytics.officePending ? "civic" : "good",
+      href: "/admin/certificates/final-processing",
+    },
+    {
+      id: "unassigned-urgent",
+      title: "Unassigned / urgent complaints",
+      helper: `${complaintAnalytics.unassigned} unassigned · ${complaintAnalytics.urgent} urgent · ${complaintAnalytics.overdue} overdue`,
+      value: complaintAnalytics.unassigned + complaintAnalytics.urgent,
+      tone: complaintAnalytics.unassigned || complaintAnalytics.urgent ? "danger" : "good",
+      href: "/admin",
+    },
+    {
+      id: "correction-loop",
+      title: "Correction requests",
+      helper: "Applications waiting for applicant response or re-check",
+      value: certificateAnalytics.needMoreInfo,
+      tone: certificateAnalytics.needMoreInfo ? "watch" : "good",
+      href: "/admin/certificates",
+    },
+  ];
+}
+
 export function ChairmanDashboard() {
   const [sessionState, setSessionState] = useState<SessionState>("checking");
   const [access, setAccess] = useState<AccessState>({ allowed: null, role: null });
   const [complaints, setComplaints] = useState<AdminComplaint[]>([]);
   const [certificates, setCertificates] = useState<CertificateApplicationRow[]>([]);
   const [dateFilter, setDateFilter] = useState<DateFilter>("30days");
+  const [wardFilter, setWardFilter] = useState("all");
+  const [certificateTypeFilter, setCertificateTypeFilter] = useState<"all" | CertificateType>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [certificateWarning, setCertificateWarning] = useState("");
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
 
-  const filteredComplaints = useMemo(() => complaints.filter((item) => isInDateRange(item.created_at, dateFilter)), [complaints, dateFilter]);
+  const availableWards = useMemo(() => {
+    const wardSet = new Set(defaultWardNames);
+    for (const complaint of complaints) wardSet.add(getComplaintWard(complaint));
+    for (const certificate of certificates) wardSet.add(getCertificateWard(certificate));
+    return Array.from(wardSet).filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  }, [complaints, certificates]);
+
+  const filteredComplaints = useMemo(
+    () =>
+      complaints.filter((item) => {
+        const matchesDate = isInDateRange(item.created_at, dateFilter);
+        const matchesWard = wardFilter === "all" || getComplaintWard(item) === wardFilter;
+        return matchesDate && matchesWard;
+      }),
+    [complaints, dateFilter, wardFilter],
+  );
+
   const filteredCertificates = useMemo(
-    () => certificates.filter((item) => isInDateRange(item.created_at, dateFilter)),
-    [certificates, dateFilter],
+    () =>
+      certificates.filter((item) => {
+        const matchesDate = isInDateRange(item.created_at, dateFilter);
+        const matchesWard = wardFilter === "all" || getCertificateWard(item) === wardFilter;
+        const matchesType = certificateTypeFilter === "all" || item.certificate_type === certificateTypeFilter;
+        return matchesDate && matchesWard && matchesType;
+      }),
+    [certificates, dateFilter, wardFilter, certificateTypeFilter],
   );
 
   const complaintAnalytics = useMemo(() => {
@@ -642,6 +837,12 @@ export function ChairmanDashboard() {
 
   const searchResults = useMemo(() => buildSearchResults(searchQuery, complaints, certificates), [searchQuery, complaints, certificates]);
   const escalationItems = useMemo(() => buildEscalationItems(filteredComplaints, filteredCertificates), [filteredComplaints, filteredCertificates]);
+  const slaBuckets = useMemo(() => buildSlaBuckets(filteredComplaints, filteredCertificates), [filteredComplaints, filteredCertificates]);
+  const recentActivities = useMemo(() => buildRecentActivities(filteredComplaints, filteredCertificates), [filteredComplaints, filteredCertificates]);
+  const bottleneckAlerts = useMemo(
+    () => buildBottleneckAlerts({ complaintAnalytics, certificateAnalytics, wardMetrics, councilorMetrics, slaBuckets }),
+    [complaintAnalytics, certificateAnalytics, wardMetrics, councilorMetrics, slaBuckets],
+  );
 
   const executiveHealthScore = useMemo(() => {
     return calculateHealthScore({
@@ -789,10 +990,10 @@ export function ChairmanDashboard() {
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    window.location.href = "/admin/login";
+    window.location.href = "/staff/login";
   }
 
-  if (sessionState === "signed-out") return <Navigate to="/admin/login" replace />;
+  if (sessionState === "signed-out") return <Navigate to="/staff/login" replace />;
 
   const allowed = access.role === "admin" || access.role === "chairman";
 
@@ -837,6 +1038,10 @@ export function ChairmanDashboard() {
                   <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
                     <span className="rounded-full bg-slate-50 px-3 py-1 ring-1 ring-slate-200">Role: {access.role ?? "authorized"}</span>
                     <span className="rounded-full bg-slate-50 px-3 py-1 ring-1 ring-slate-200">Range: {rangeLabels[dateFilter]}</span>
+                    <span className="rounded-full bg-slate-50 px-3 py-1 ring-1 ring-slate-200">Ward: {wardFilter === "all" ? "All Wards" : wardFilter}</span>
+                    <span className="rounded-full bg-slate-50 px-3 py-1 ring-1 ring-slate-200">
+                      Type: {certificateTypeFilter === "all" ? "All Certificates" : certificateTypeLabels[certificateTypeFilter]}
+                    </span>
                     <span className="rounded-full bg-slate-50 px-3 py-1 ring-1 ring-slate-200">
                       Last updated: {lastUpdatedAt ? formatDateTime(lastUpdatedAt) : "Not refreshed yet"}
                     </span>
@@ -856,7 +1061,7 @@ export function ChairmanDashboard() {
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3 xl:grid-cols-[1fr_460px]">
+              <div className="mt-5 grid gap-3 xl:grid-cols-[1fr_560px]">
                 <div className="grid gap-2 sm:grid-cols-5">
                   {(Object.entries(rangeLabels) as Array<[DateFilter, string]>).map(([value, label]) => (
                     <button
@@ -883,6 +1088,53 @@ export function ChairmanDashboard() {
                     className="h-full min-h-[52px] w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-civic-500 focus:ring-4 focus:ring-civic-100"
                   />
                 </label>
+              </div>
+
+              <div className="mt-3 grid gap-3 md:grid-cols-[1fr_1fr_auto]">
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-black uppercase tracking-wide text-slate-500">Ward filter</span>
+                  <select
+                    value={wardFilter}
+                    onChange={(event) => setWardFilter(event.target.value)}
+                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-civic-500 focus:ring-4 focus:ring-civic-100"
+                  >
+                    <option value="all">All Wards</option>
+                    {availableWards.map((ward) => (
+                      <option key={ward} value={ward}>
+                        {ward}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-[11px] font-black uppercase tracking-wide text-slate-500">Certificate type</span>
+                  <select
+                    value={certificateTypeFilter}
+                    onChange={(event) => setCertificateTypeFilter(event.target.value as "all" | CertificateType)}
+                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-civic-500 focus:ring-4 focus:ring-civic-100"
+                  >
+                    <option value="all">All Certificate Types</option>
+                    {(Object.entries(certificateTypeLabels) as Array<[CertificateType, string]>).map(([type, label]) => (
+                      <option key={type} value={type}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDateFilter("30days");
+                    setWardFilter("all");
+                    setCertificateTypeFilter("all");
+                    setSearchQuery("");
+                  }}
+                  className="mt-5 h-12 rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-black text-slate-700 hover:bg-white"
+                >
+                  Reset Filters
+                </button>
               </div>
             </div>
 
@@ -919,6 +1171,16 @@ export function ChairmanDashboard() {
               />
             </div>
 
+            <div className="mb-4 grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+              <Panel title="SLA Aging Buckets" description="Open complaints and certificates grouped by age for chairman-level delay monitoring." icon={<CalendarDays className="h-5 w-5" />}>
+                <SlaBucketBoard buckets={slaBuckets} />
+              </Panel>
+
+              <Panel title="Bottleneck Alerts" description="Auto-detected pressure points by ward, councilor queue, office queue and pending corrections." icon={<ShieldAlert className="h-5 w-5" />}>
+                <BottleneckAlertList items={bottleneckAlerts} />
+              </Panel>
+            </div>
+
             <div className="mb-4 grid gap-4 xl:grid-cols-[1.35fr_0.85fr]">
               <Panel title="Ward Performance Ranking" description="Lowest health score appears first so weak wards are visible immediately." icon={<MapPinned className="h-5 w-5" />}>
                 <WardRankingBoard metrics={wardMetrics} />
@@ -952,6 +1214,10 @@ export function ChairmanDashboard() {
                 <ComplaintStatusCompact metrics={complaintStatusMetrics} total={complaintAnalytics.total} />
               </Panel>
             </div>
+
+            <Panel title="Recent Activity Feed" description="Latest complaint and certificate updates in the selected filters." icon={<ListChecks className="h-5 w-5" />}>
+              <RecentActivityFeed items={recentActivities} />
+            </Panel>
 
             <ReportsAndActions />
           </>
@@ -1178,6 +1444,83 @@ function SnapshotMini({ label, value }: { label: string; value: number | string 
     <div className="rounded-2xl border border-slate-100 bg-slate-50 p-3">
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-1 text-xl font-black text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function SlaBucketBoard({ buckets }: { buckets: SlaBucketMetric[] }) {
+  const total = buckets.reduce((sum, item) => sum + item.total, 0);
+
+  return (
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      {buckets.map((bucket) => {
+        const percentage = total ? (bucket.total / total) * 100 : 0;
+        return (
+          <div key={bucket.key} className={`rounded-2xl border p-4 ring-1 ${toneClasses(bucket.tone)}`}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-black">{bucket.label}</p>
+                <p className="mt-1 text-xs font-semibold opacity-75">{bucket.helper}</p>
+              </div>
+              <p className="text-3xl font-black leading-none">{bucket.total}</p>
+            </div>
+            <ProgressBar value={percentage} tone={bucket.tone} />
+            <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-bold opacity-80">
+              <span>Complaints: {bucket.complaints}</span>
+              <span>Certificates: {bucket.certificates}</span>
+              <span>Councilor: {bucket.councilorQueue}</span>
+              <span>Office: {bucket.officeQueue}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function BottleneckAlertList({ items }: { items: BottleneckAlert[] }) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+      {items.map((item) => (
+        <Link key={item.id} to={item.href} className={`rounded-2xl border p-4 ring-1 transition hover:-translate-y-0.5 hover:shadow-sm ${toneClasses(item.tone)}`}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-black">{item.title}</p>
+              <p className="mt-1 line-clamp-2 text-xs font-semibold leading-5 opacity-75">{item.helper}</p>
+            </div>
+            <p className="shrink-0 text-2xl font-black leading-none">{item.value}</p>
+          </div>
+          <div className="mt-3 inline-flex items-center text-[11px] font-black uppercase tracking-wide opacity-75">
+            View detail <ChevronRight className="ml-1 h-3.5 w-3.5" />
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function RecentActivityFeed({ items }: { items: RecentActivityItem[] }) {
+  if (!items.length) {
+    return <p className="rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-500 ring-1 ring-slate-100">No recent activity found for the selected filters.</p>;
+  }
+
+  return (
+    <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+      {items.map((item) => (
+        <Link key={item.id} to={item.href} className="rounded-2xl border border-slate-100 bg-slate-50 p-4 transition hover:border-civic-200 hover:bg-civic-50">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate font-mono text-sm font-black text-slate-950">{item.trackingNo}</p>
+              <p className="mt-1 truncate text-sm font-bold text-slate-800">{item.title}</p>
+              <p className="mt-1 text-xs font-semibold text-slate-500">{item.ward} · {formatDate(item.time)}</p>
+            </div>
+            <span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase ring-1 ${toneClasses(item.tone)}`}>
+              {item.type}
+            </span>
+          </div>
+          <p className="mt-3 text-xs font-black text-slate-600">{item.status}</p>
+        </Link>
+      ))}
     </div>
   );
 }
