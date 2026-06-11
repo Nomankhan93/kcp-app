@@ -163,23 +163,10 @@ export async function updateAdminComplaint(input: AdminComplaintUpdateInput, res
   });
 
   if (rpcError) {
-    const resolvedAt = input.status === 'resolved' ? new Date().toISOString() : null;
-    const { error: updateError } = await supabase
-      .from('complaints')
-      .update({
-        status: input.status,
-        priority: input.priority,
-        assigned_department: input.assignedDepartment,
-        assigned_to: input.assignedTo,
-        assigned_staff_id: input.assignedStaffId,
-        public_remarks: input.publicRemarks,
-        internal_remarks: input.internalRemarks,
-        resolution_photo_path: input.resolutionPhotoPath,
-        ...(resolvedAt ? { resolved_at: resolvedAt } : {}),
-      })
-      .eq('id', input.id);
-
-    if (updateError) throw updateError;
+    // Fail closed: admin/staff mutations must go through the audited RPC path.
+    // Do not fall back to direct table updates because that can bypass workflow
+    // guards, status history logic, and future role restrictions.
+    throw rpcError;
   }
 
   if (resolutionProof) {

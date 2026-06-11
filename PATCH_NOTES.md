@@ -1,20 +1,29 @@
-# Patch Notes: KCP Admin-Only Role Management Fix v1
+# Patch Notes - KCP RLS & Certificate Security Hardening v2
+
+## Changed files
+
+- `src/lib/adminComplaints.ts`
+- `src/lib/certificates.ts`
+- `src/pages/CertificateTrack.tsx`
+- `supabase/rls-certificate-security-hardening-v2.sql`
+- `supabase/functions/issued-certificate-download-url/index.ts`
+- `docs/RLS_CERTIFICATE_SECURITY_HARDENING_V2.md`
 
 ## Summary
 
-This patch tightens the portal access model so that only `admin` users can manage portal roles and ward General Councilor assignments.
+- Removed direct table-update fallback from admin complaint mutation flow.
+- Added certificate security SQL to remove General Councilor direct `certificate_applications` row updates.
+- Kept ward verification RPC-only for General Councilors.
+- Removed anonymous issued certificate storage read policy.
+- Added Edge Function for tracking-number + mobile verified signed certificate download links.
 
-## Files changed
+## Apply
 
-- `supabase/admin-only-role-management-fix-v1.sql`
-- `src/lib/userManagement.ts`
-- `src/pages/AdminDashboard.tsx`
-- `src/pages/AdminUsers.tsx`
-- `src/pages/AdminWardCouncilors.tsx`
-- `docs/ADMIN_ONLY_ROLE_MANAGEMENT_FIX_V1.md`
-- `PATCH_NOTES.md`
+```bash
+unzip -o /mnt/c/Users/*/Downloads/kunri-rls-certificate-security-hardening-v2.zip -d .
+```
 
-## Run SQL
+## SQL
 
 ```bash
 PGPASSWORD=postgres psql \
@@ -22,13 +31,18 @@ PGPASSWORD=postgres psql \
   -p 55322 \
   -U postgres \
   -d postgres \
-  -f supabase/admin-only-role-management-fix-v1.sql
+  -f supabase/rls-certificate-security-hardening-v2.sql
 ```
 
-For cloud Supabase, run the same SQL file in SQL Editor after the existing security advisor fix SQL.
+## Deploy Edge Function
 
-## Expected behavior
+```bash
+npx supabase functions deploy issued-certificate-download-url
+```
 
-- Admin can manage user roles and ward councilor assignments.
-- Chairman can monitor dashboards/reports but cannot manage roles/users.
-- Staff/certificate officer/general councilor cannot manage portal roles.
+## Test
+
+```bash
+npm run typecheck
+npm run build
+```

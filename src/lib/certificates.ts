@@ -313,8 +313,28 @@ export async function createCertificateDocumentSignedUrl(path: string | null): P
   return data?.signedUrl ?? null;
 }
 
-export async function createIssuedCertificateSignedUrl(path: string | null): Promise<string | null> {
+export async function createIssuedCertificateSignedUrl(
+  path: string | null,
+  verifiedAccess?: { trackingNo?: string; mobile?: string },
+): Promise<string | null> {
   if (!path) return null;
+
+  if (verifiedAccess?.trackingNo && verifiedAccess?.mobile) {
+    const { data, error } = await supabase.functions.invoke('issued-certificate-download-url', {
+      body: {
+        trackingNo: normalizeTrackingNo(verifiedAccess.trackingNo),
+        mobile: normalizePhone(verifiedAccess.mobile),
+      },
+    });
+
+    if (error) {
+      console.warn('Unable to create verified issued certificate link.', error.message);
+      return null;
+    }
+
+    const signedUrl = typeof data?.signedUrl === 'string' ? data.signedUrl : null;
+    return signedUrl;
+  }
 
   const { data, error } = await supabase.storage.from('certificate-documents').createSignedUrl(path, 60 * 15);
 

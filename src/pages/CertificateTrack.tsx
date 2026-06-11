@@ -48,12 +48,14 @@ export function CertificateTrack() {
     const form = new FormData(event.currentTarget);
 
     try {
-      const result = await trackCertificateApplication(String(form.get('trackingNo') || ''), String(form.get('mobile') || ''));
+      const trackingNo = String(form.get('trackingNo') || '');
+      const mobile = String(form.get('mobile') || '');
+      const result = await trackCertificateApplication(trackingNo, mobile);
       setApplication(result.application);
       setTimeline(result.timeline);
 
       if (result.application?.issued_certificate_path) {
-        setIssuedCertificateUrl(await createIssuedCertificateSignedUrl(result.application.issued_certificate_path));
+        setIssuedCertificateUrl(await createIssuedCertificateSignedUrl(result.application.issued_certificate_path, { trackingNo, mobile }));
       }
 
       setSearched(true);
