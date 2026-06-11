@@ -1,30 +1,23 @@
-# KCP Final QA & Security Hardening v1
+# Patch Notes - KCP Security Advisor Fix v1
 
 ## Added
-- `supabase/final-qa-security-hardening-v1.sql`
-- `.env.example`
-- `.env.production.example`
-- `/privacy-policy` route and page
-- Honeypot anti-spam field on public forms
-- Route-level lazy loading in `src/App.tsx`
-- Final QA documentation
 
-## Updated
-- Corrected safe CMS index logic in `supabase/production-readiness-v1.sql`
-- Tightened frontend access visibility for chairman/user management/CMS/final certificate processing
-- Footer now links to Privacy Policy
-- Sitemap includes `/privacy-policy`
+- `supabase/security-advisor-fix-v1.sql`
+- `docs/SECURITY_ADVISOR_FIX_V1.md`
 
-## SQL
-Run after production readiness:
+## Security changes
 
-```bash
-PGPASSWORD=postgres psql \
-  -h 127.0.0.1 \
-  -p 55322 \
-  -U postgres \
-  -d postgres \
-  -f supabase/final-qa-security-hardening-v1.sql
-```
+- Fixed mutable `search_path` on key trigger/helper functions.
+- Removed broad anonymous `cms-files` storage listing policy.
+- Added staff-only CMS file management policy.
+- Revoked accidental PUBLIC/anon RPC execution from sensitive `SECURITY DEFINER` functions.
+- Re-granted only the required public functions to `anon`.
+- Re-granted required authenticated workflows to `authenticated`.
+- Revoked direct RPC execution for trigger-only citizen notification functions.
+- Added default privilege hardening for future functions.
 
-Cloud: run `supabase/final-qa-security-hardening-v1.sql` in Supabase SQL Editor after all previous SQL files.
+## Expected result
+
+Supabase Security Advisor warnings should reduce significantly, especially anon/public SECURITY DEFINER warnings and search_path warnings.
+
+Some warnings can intentionally remain for public submit/tracking RPCs and authenticated workflow RPCs. These should be reviewed as accepted risks only after functional testing.
