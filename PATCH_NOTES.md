@@ -1,43 +1,45 @@
-# Patch Notes - KCP Canonical Role Helpers v1
+# KCP Seed & Recovery SQL v1
 
-## Summary
+## Priority
 
-This patch locks the final role helper rules for Kunri Citizens Portal.
+High
 
-## Changed files
+## Purpose
 
-- `src/lib/adminComplaints.ts`
-- `supabase/canonical-role-helpers-v1.sql`
-- `docs/CANONICAL_ROLE_HELPERS_V1.md`
-- `PATCH_NOTES.md`
+This patch adds clean seed/recovery SQL files for Kunri Citizens Portal so local/cloud Supabase environments can safely restore:
 
-## Key changes
+- 10 wards
+- Public ward dropdown records
+- Complaint categories
+- Ward General Councilor assignments
+- `general_councilor` user roles
+- Admin and Chairman roles
+- Verification queries for roles and wards
 
-- Removed legacy `is_admin()` fallback from frontend admin access checks.
-- Added canonical role helper SQL.
-- Made `is_admin()` strict admin-only.
-- Kept Chairman monitoring/read-only.
-- Kept user/role/ward-councilor management admin-only.
-- Kept staff complaint/CMS operations.
-- Kept certificate officer final certificate processing.
-- Kept General Councilor limited to assigned ward verification.
-- Recreated key complaint and certificate policies using reader/manager helpers.
+## Files added
 
-## SQL to run
-
-```bash
-PGPASSWORD=postgres psql \
-  -h 127.0.0.1 \
-  -p 55322 \
-  -U postgres \
-  -d postgres \
-  -f supabase/canonical-role-helpers-v1.sql
+```text
+supabase/seeds/001_seed_wards.sql
+supabase/seeds/002_seed_complaint_categories.sql
+supabase/seeds/003_seed_ward_councilors_template.sql
+supabase/seeds/004_seed_admin_chairman_template.sql
+supabase/seeds/005_verify_roles_and_wards.sql
+docs/SEED_AND_RECOVERY_SQL_V1.md
+PATCH_NOTES.md
 ```
 
-## Commit
+## Important
 
-```bash
-git add .
-git commit -m "Add canonical role helpers"
-git push
+`003_seed_ward_councilors_template.sql` and `004_seed_admin_chairman_template.sql` are templates. Replace placeholder UUIDs with real Supabase Auth user UUIDs before running.
+
+The template files are fail-safe and will stop with an exception if placeholders remain.
+
+## Recommended run order
+
+```text
+1. supabase/seeds/001_seed_wards.sql
+2. supabase/seeds/002_seed_complaint_categories.sql
+3. Edit + run supabase/seeds/003_seed_ward_councilors_template.sql
+4. Edit + run supabase/seeds/004_seed_admin_chairman_template.sql
+5. supabase/seeds/005_verify_roles_and_wards.sql
 ```
