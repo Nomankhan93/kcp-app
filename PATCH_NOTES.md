@@ -1,28 +1,22 @@
-# Citizen Login / Profile System v2
+# KCP Final QA & Security Hardening v1
 
 ## Added
-
-- Private citizen complaint detail page: `/citizen/complaints/:id`
-- Private citizen certificate detail page: `/citizen/certificates/:id`
-- Citizen notification center: `/citizen/notifications`
-- Profile completion percentage on dashboard
-- Action-required certificate alerts for `need_more_info`
-- Need-correction citizen response form
-- Correction document upload support
-- Timeline/detail RPCs for citizen-owned records
-- Notification table + automatic timeline notification triggers
+- `supabase/final-qa-security-hardening-v1.sql`
+- `.env.example`
+- `.env.production.example`
+- `/privacy-policy` route and page
+- Honeypot anti-spam field on public forms
+- Route-level lazy loading in `src/App.tsx`
+- Final QA documentation
 
 ## Updated
-
-- `src/App.tsx` route registration
-- `src/components/Layout.tsx` citizen navigation
-- `src/lib/citizenAuth.ts` citizen service functions
-- `src/lib/types.ts` v2 citizen types
-- `src/pages/CitizenDashboard.tsx` redesigned dashboard
+- Corrected safe CMS index logic in `supabase/production-readiness-v1.sql`
+- Tightened frontend access visibility for chairman/user management/CMS/final certificate processing
+- Footer now links to Privacy Policy
+- Sitemap includes `/privacy-policy`
 
 ## SQL
-
-Run:
+Run after production readiness:
 
 ```bash
 PGPASSWORD=postgres psql \
@@ -30,11 +24,7 @@ PGPASSWORD=postgres psql \
   -p 55322 \
   -U postgres \
   -d postgres \
-  -f supabase/citizen-login-profile-v2.sql
+  -f supabase/final-qa-security-hardening-v1.sql
 ```
 
-## Build check
-
-- `npm run typecheck` passed
-- `npm run build` passed
-- Vite chunk-size warning only, no build error
+Cloud: run `supabase/final-qa-security-hardening-v1.sql` in Supabase SQL Editor after all previous SQL files.

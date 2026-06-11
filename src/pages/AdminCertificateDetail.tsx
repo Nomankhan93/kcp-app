@@ -65,8 +65,8 @@ export function AdminCertificateDetail() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const canTownUpdate = role === 'admin' || role === 'chairman' || role === 'staff';
-  const canCouncilorVerify = role === 'admin' || role === 'chairman' || role === 'general_councilor';
+  const canTownUpdate = role === 'admin' || role === 'staff' || role === 'certificate_officer';
+  const canCouncilorVerify = role === 'admin' || role === 'general_councilor';
   const issuedDocument = documents.find((document) => document.kind === 'issued_certificate');
 
   const sameWardCouncilors = useMemo(() => {

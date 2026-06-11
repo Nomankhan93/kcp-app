@@ -174,7 +174,7 @@ export function AdminDashboard() {
                   <FileText className="mr-2 h-4 w-4" /> Certificates
                 </Link>
 
-                {(access.role === 'admin' || access.role === 'chairman' || access.role === 'staff') ? (
+                {(access.role === 'admin' || access.role === 'staff') ? (
                   <Link
                     to="/admin/content"
                     className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
@@ -182,7 +182,7 @@ export function AdminDashboard() {
                     <FileText className="mr-2 h-4 w-4" /> Public CMS
                   </Link>
                 ) : null}
-                {(access.role === 'admin' || access.role === 'chairman') ? (
+                {(access.role === 'admin') ? (
                   <Link
                     to="/admin/users"
                     className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
@@ -190,7 +190,7 @@ export function AdminDashboard() {
                     <Users className="mr-2 h-4 w-4" /> User Roles
                   </Link>
                 ) : null}
-                {(access.role === 'admin' || access.role === 'chairman') ? (
+                {(access.role === 'admin') ? (
                   <Link
                     to="/admin/ward-councilors"
                     className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"

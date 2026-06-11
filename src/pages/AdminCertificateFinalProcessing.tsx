@@ -44,7 +44,7 @@ export function AdminCertificateFinalProcessing() {
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [search, setSearch] = useState('');
 
-  const canUseFinalProcessing = access.role === 'admin' || access.role === 'chairman' || access.role === 'staff' || access.role === 'certificate_officer';
+  const canUseFinalProcessing = access.role === 'admin' || access.role === 'staff' || access.role === 'certificate_officer';
 
   const officeQueue = useMemo(
     () => applications.filter((item) => queueStatuses.includes(item.status) || (item.councilor_status === 'verified' && item.status !== 'delivered')),
@@ -147,7 +147,7 @@ export function AdminCertificateFinalProcessing() {
         {access.allowed === false || (access.allowed && !canUseFinalProcessing) ? (
           <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800">
             <h2 className="text-xl font-bold">Access denied</h2>
-            <p className="mt-2 text-sm">Only Town Committee admin, chairman or staff can use final certificate processing. General Councilors should use the ward verification dashboard.</p>
+            <p className="mt-2 text-sm">Only Town Committee admin, staff or certificate officer can use final certificate processing. General Councilors should use the ward verification dashboard.</p>
           </div>
         ) : null}
 

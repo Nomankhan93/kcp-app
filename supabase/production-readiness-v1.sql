@@ -94,7 +94,7 @@ as $$
   select exists (
     select 1 from public.user_roles
     where user_id = auth.uid()
-      and role in ('admin', 'chairman', 'staff')
+      and role in ('admin', 'staff')
   );
 $$;
 
@@ -111,7 +111,7 @@ as $$
   select exists (
     select 1 from public.user_roles
     where user_id = auth.uid()
-      and role in ('admin', 'chairman', 'staff', 'certificate_officer')
+      and role in ('admin', 'staff', 'certificate_officer')
   );
 $$;
 
@@ -128,7 +128,7 @@ as $$
   select exists (
     select 1 from public.user_roles
     where user_id = auth.uid()
-      and role in ('admin', 'chairman', 'staff')
+      and role in ('admin', 'staff')
   );
 $$;
 
@@ -217,10 +217,49 @@ create index if not exists certificate_applications_status_created_idx on public
 create index if not exists certificate_applications_ward_created_idx on public.certificate_applications (ward, created_at desc);
 create index if not exists certificate_applications_councilor_idx on public.certificate_applications (assigned_councilor_id, councilor_status);
 
-create index if not exists cms_notices_public_idx on public.cms_notices (status, notice_date desc);
-create index if not exists cms_news_public_idx on public.cms_news (status, published_date desc);
-create index if not exists cms_downloads_public_idx on public.cms_downloads (status, sort_order, title);
-create index if not exists cms_leadership_messages_public_idx on public.cms_leadership_messages (is_active, sort_order);
+-- Safe CMS indexes for local/cloud schemas. Older patches may have slightly different column names.
+do $$
+begin
+  if to_regclass('public.cms_notices') is not null then
+    if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'cms_notices' and column_name = 'notice_date') then
+      execute 'create index if not exists cms_notices_public_idx on public.cms_notices (status, notice_date desc)';
+    elsif exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'cms_notices' and column_name = 'created_at') then
+      execute 'create index if not exists cms_notices_public_idx on public.cms_notices (status, created_at desc)';
+    else
+      execute 'create index if not exists cms_notices_public_idx on public.cms_notices (status)';
+    end if;
+  end if;
+
+  if to_regclass('public.cms_news') is not null then
+    if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'cms_news' and column_name = 'published_at') then
+      execute 'create index if not exists cms_news_public_idx on public.cms_news (status, published_at desc)';
+    elsif exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'cms_news' and column_name = 'published_date') then
+      execute 'create index if not exists cms_news_public_idx on public.cms_news (status, published_date desc)';
+    elsif exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'cms_news' and column_name = 'created_at') then
+      execute 'create index if not exists cms_news_public_idx on public.cms_news (status, created_at desc)';
+    else
+      execute 'create index if not exists cms_news_public_idx on public.cms_news (status)';
+    end if;
+  end if;
+
+  if to_regclass('public.cms_downloads') is not null then
+    if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'cms_downloads' and column_name = 'sort_order') then
+      execute 'create index if not exists cms_downloads_public_idx on public.cms_downloads (status, sort_order, title)';
+    else
+      execute 'create index if not exists cms_downloads_public_idx on public.cms_downloads (status, title)';
+    end if;
+  end if;
+
+  if to_regclass('public.cms_leadership_messages') is not null then
+    if exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'cms_leadership_messages' and column_name = 'display_order') then
+      execute 'create index if not exists cms_leadership_messages_public_idx on public.cms_leadership_messages (is_active, display_order)';
+    elsif exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'cms_leadership_messages' and column_name = 'sort_order') then
+      execute 'create index if not exists cms_leadership_messages_public_idx on public.cms_leadership_messages (is_active, sort_order)';
+    else
+      execute 'create index if not exists cms_leadership_messages_public_idx on public.cms_leadership_messages (is_active)';
+    end if;
+  end if;
+end $$;
 
 -- -----------------------------------------------------------------------------
 -- Final production verification output.

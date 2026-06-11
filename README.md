@@ -54,6 +54,7 @@ Run these files in Supabase SQL Editor in this order:
 7. `supabase/public-cms-v1.sql`
 8. `supabase/staff-ward-management-v1.sql`
 9. `supabase/production-readiness-v1.sql`
+10. `supabase/final-qa-security-hardening-v1.sql`
 
 Then create Auth users in Supabase and assign roles using `/admin/users` and `/admin/ward-councilors`, or with direct SQL for the first admin user.
 
@@ -72,6 +73,22 @@ Then create Auth users in Supabase and assign roles using `/admin/users` and `/a
 ```bash
 npm run check
 ```
+
+## Final QA & Security Hardening
+
+After all module SQL and production readiness SQL have been applied, run:
+
+```bash
+PGPASSWORD=postgres psql \
+  -h 127.0.0.1 \
+  -p 55322 \
+  -U postgres \
+  -d postgres \
+  -f supabase/final-qa-security-hardening-v1.sql
+```
+
+This final hardening keeps Chairman access monitoring-oriented, makes role/ward management admin-only, limits CMS to admin/staff, and applies safe cloud-compatible CMS indexes.
+
 
 ## Important approval note
 

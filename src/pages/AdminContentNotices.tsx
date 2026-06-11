@@ -147,7 +147,7 @@ export function AdminContentNotices() {
 }
 
 function AccessDenied() {
-  return <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800 lg:col-span-2"><h2 className="text-xl font-bold">Access denied</h2><p className="mt-2 text-sm">Only admin, chairman and staff users can manage content.</p></div>;
+  return <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800 lg:col-span-2"><h2 className="text-xl font-bold">Access denied</h2><p className="mt-2 text-sm">Only admin and staff users can manage content.</p></div>;
 }
 
 function Field({ label, name, defaultValue, type = 'text', required = false }: { label: string; name: string; defaultValue?: string; type?: string; required?: boolean }) {

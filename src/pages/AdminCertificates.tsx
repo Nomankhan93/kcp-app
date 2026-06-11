@@ -154,7 +154,7 @@ export function AdminCertificates() {
                 <Link to="/admin" className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
                   <ArrowLeft className="mr-2 h-4 w-4" /> Complaints
                 </Link>
-                {access.role === 'admin' || access.role === 'chairman' || access.role === 'staff' || access.role === 'certificate_officer' ? (
+                {access.role === 'admin' || access.role === 'staff' || access.role === 'certificate_officer' ? (
                   <Link to="/admin/certificates/final-processing" className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
                     <FileCheck2 className="mr-2 h-4 w-4" /> Final Processing
                   </Link>

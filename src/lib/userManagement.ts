@@ -29,7 +29,7 @@ export const manageablePortalRoles: Array<{ value: PortalRole; label: string; de
   {
     value: 'chairman',
     label: 'Chairman',
-    description: 'Monitoring, dashboards, reports and user oversight access.',
+    description: 'Monitoring dashboards and reports only. Not used for operational/user management changes.',
   },
   {
     value: 'staff',
@@ -58,7 +58,7 @@ export async function checkUserManagementAccess(): Promise<UserManagementAccess>
   const { data, error } = await supabase.rpc('current_portal_role');
   const role = asText(data) as PortalRole | null;
 
-  if (!error && (role === 'admin' || role === 'chairman')) {
+  if (!error && role === 'admin') {
     return { signedIn: true, allowed: true, role };
   }
 

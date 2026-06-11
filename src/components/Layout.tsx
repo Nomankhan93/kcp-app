@@ -184,7 +184,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
               Official contact details, notices, forms and downloads should be updated after written approval.
             </p>
           </div>
-          <p className="font-medium text-civic-800">For official use after written approval.</p>
+          <div className="flex flex-col gap-2 font-medium text-civic-800 sm:flex-row sm:items-center sm:justify-end">
+            <Link to="/privacy-policy" className="hover:text-civic-950">Privacy Policy</Link>
+            <span className="hidden text-slate-300 sm:inline">•</span>
+            <span>For official use after written approval.</span>
+          </div>
         </div>
       </footer>
     </div>

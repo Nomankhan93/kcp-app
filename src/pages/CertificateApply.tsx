@@ -108,6 +108,14 @@ export function CertificateApply() {
 
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
+    const websiteValue = getInput(form, 'website');
+
+    if (websiteValue) {
+      setError('Unable to submit this request. Please refresh the page and try again.');
+      setLoading(false);
+      return;
+    }
+
     const manualArea = getInput(form, 'manualArea');
     const area = selectedArea && !selectedArea.name.toLowerCase().includes('other') ? selectedArea.name : manualArea;
     const ward = getInput(form, 'ward') || selectedArea?.ward || '';
@@ -200,6 +208,11 @@ export function CertificateApply() {
         ) : null}
 
         <form onSubmit={handleSubmit} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+          <div className="hidden" aria-hidden="true">
+            <label>Leave this field blank
+              <input name="website" tabIndex={-1} autoComplete="off" />
+            </label>
+          </div>
           {loadingLookups ? (
             <div className="flex items-center rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-500 ring-1 ring-slate-200">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading wards and areas...

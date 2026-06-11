@@ -12,7 +12,7 @@ import type { LeadershipMessage, PublicCardItem } from './publicContent';
 export type CmsAccess = {
   signedIn: boolean;
   allowed: boolean;
-  role: 'admin' | 'chairman' | 'staff' | null;
+  role: 'admin' | 'staff' | null;
 };
 
 export type PublicDownloadItem = PublicCardItem & {
@@ -22,7 +22,7 @@ export type PublicDownloadItem = PublicCardItem & {
 };
 
 const CMS_BUCKET = 'cms-files';
-const CMS_ADMIN_ROLES = ['admin', 'chairman', 'staff'];
+const CMS_ADMIN_ROLES = ['admin', 'staff'];
 
 function getPublicStorageUrl(path: string | null | undefined) {
   if (!path) return null;

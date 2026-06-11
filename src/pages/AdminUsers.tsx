@@ -148,7 +148,7 @@ export function AdminUsers() {
         {access.allowed === false ? (
           <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800">
             <h2 className="text-xl font-bold">Access denied</h2>
-            <p className="mt-2 text-sm">Only admin and chairman users can manage portal roles.</p>
+            <p className="mt-2 text-sm">Only admin users can manage portal roles.</p>
             <button onClick={handleLogout} className="mt-4 rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white">
               Logout
             </button>
