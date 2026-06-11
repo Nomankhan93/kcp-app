@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
+import { ConfirmDialog, EmptyState, InlineToast, PermissionDeniedState } from "../components/ui/Feedback";
 import {
   checkUserManagementAccess,
   fetchPortalUsersWithRoles,
@@ -24,6 +25,12 @@ type SessionState = "checking" | "signed-out" | "signed-in";
 type AccessState = {
   allowed: boolean | null;
   role: PortalRole | null;
+};
+
+type PendingRoleChange = {
+  user: PortalAuthUserRow;
+  role: PortalRole;
+  enabled: boolean;
 };
 
 function roleBadgeClass(role: PortalRole) {
@@ -52,6 +59,7 @@ export function AdminUsers() {
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [pendingRoleChange, setPendingRoleChange] = useState<PendingRoleChange | null>(null);
 
   const filteredUsers = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -127,6 +135,14 @@ export function AdminUsers() {
     }
   }
 
+  function requestRoleToggle(
+    user: PortalAuthUserRow,
+    role: PortalRole,
+    enabled: boolean,
+  ) {
+    setPendingRoleChange({ user, role, enabled });
+  }
+
   async function handleRoleToggle(
     user: PortalAuthUserRow,
     role: PortalRole,
@@ -178,19 +194,18 @@ export function AdminUsers() {
         ) : null}
 
         {access.allowed === false ? (
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800">
-            <h2 className="text-xl font-bold">Access denied</h2>
-            <p className="mt-2 text-sm">
-              Only admin users can manage portal roles. Chairman users have
-              monitoring/read-only access only.
-            </p>
-            <button
-              onClick={handleLogout}
-              className="mt-4 rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white"
-            >
-              Logout
-            </button>
-          </div>
+          <PermissionDeniedState
+            title="Access denied"
+            description="Only admin users can manage portal roles. Chairman users have monitoring/read-only access only."
+            action={(
+              <button
+                onClick={handleLogout}
+                className="rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white hover:bg-rose-800"
+              >
+                Logout
+              </button>
+            )}
+          />
         ) : null}
 
         {access.allowed ? (
@@ -258,14 +273,14 @@ export function AdminUsers() {
               </label>
 
               {message ? (
-                <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                  {message}
-                </p>
+                <div className="mt-4">
+                  <InlineToast tone="success" message={message} onDismiss={() => setMessage("")} />
+                </div>
               ) : null}
               {error ? (
-                <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-                  {error}
-                </p>
+                <div className="mt-4">
+                  <InlineToast tone="error" message={error} onDismiss={() => setError("")} />
+                </div>
               ) : null}
 
               <div className="mt-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
@@ -291,9 +306,7 @@ export function AdminUsers() {
                 ) : null}
 
                 {!loading && filteredUsers.length === 0 ? (
-                  <div className="px-4 py-10 text-center text-slate-500">
-                    No users found.
-                  </div>
+                  <EmptyState title="No users found" description="Try a different search term or create users in Supabase Authentication first." />
                 ) : null}
 
                 {filteredUsers.map((user) => {
@@ -343,7 +356,7 @@ export function AdminUsers() {
                                 checked={checked}
                                 disabled={savingKey === key}
                                 onChange={(event) =>
-                                  void handleRoleToggle(
+                                  requestRoleToggle(
                                     user,
                                     roleItem.value,
                                     event.target.checked,
@@ -405,11 +418,8 @@ export function AdminUsers() {
 
                     {!loading && filteredUsers.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={5}
-                          className="px-4 py-10 text-center text-slate-500"
-                        >
-                          No users found.
+                        <td colSpan={5} className="px-4 py-10">
+                          <EmptyState title="No users found" description="Try a different search term or create users in Supabase Authentication first." />
                         </td>
                       </tr>
                     ) : null}
@@ -462,7 +472,7 @@ export function AdminUsers() {
                                       checked={checked}
                                       disabled={savingKey === key}
                                       onChange={(event) =>
-                                        void handleRoleToggle(
+                                        requestRoleToggle(
                                           user,
                                           roleItem.value,
                                           event.target.checked,
@@ -499,6 +509,26 @@ export function AdminUsers() {
           </>
         ) : null}
       </section>
+      <ConfirmDialog
+        open={Boolean(pendingRoleChange)}
+        title={pendingRoleChange?.enabled ? "Assign portal role?" : "Remove portal role?"}
+        description={(
+          <span>
+            You are about to {pendingRoleChange?.enabled ? "assign" : "remove"} the <strong>{pendingRoleChange?.role.replace("_", " ")}</strong> role {pendingRoleChange?.enabled ? "to" : "from"} <strong>{pendingRoleChange?.user.email ?? pendingRoleChange?.user.user_id}</strong>. This affects portal access immediately.
+          </span>
+        )}
+        confirmLabel={pendingRoleChange?.enabled ? "Assign Role" : "Remove Role"}
+        tone={pendingRoleChange?.enabled ? "warning" : "error"}
+        busy={Boolean(pendingRoleChange && savingKey === `${pendingRoleChange.user.user_id}-${pendingRoleChange.role}`)}
+        onCancel={() => setPendingRoleChange(null)}
+        onConfirm={() => {
+          if (!pendingRoleChange) return;
+          const { user, role, enabled } = pendingRoleChange;
+          setPendingRoleChange(null);
+          void handleRoleToggle(user, role, enabled);
+        }}
+      />
+
     </>
   );
 }

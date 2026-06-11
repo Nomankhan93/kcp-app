@@ -1,39 +1,32 @@
-# Patch 5 — KCP Role-Based Portal Login v1
-
-## Priority
-
-Medium / High
+# KCP UI Safety & Confirmation v1
 
 ## Summary
 
-This patch cleans the public navigation and adds a dedicated role-based staff login page.
-
-## Changes
-
-- Added `/staff/login` route.
-- Kept `/admin/login` as a redirect to `/staff/login`.
-- Added `StaffLogin.tsx` with role-based redirect logic.
-- Removed direct internal dashboard links from public header.
-- Public header now shows only Citizen Login and Staff Portal under Login / Access.
-- Removed Citizen Dashboard and Citizen Notifications from public Citizen Services dropdown.
-- Added documentation for role-based portal login.
-
-## Role redirects
-
-- `admin` → `/admin`
-- `chairman` → `/admin/chairman-dashboard`
-- `staff` → `/admin`
-- `certificate_officer` → `/admin/certificates/final-processing`
-- `general_councilor` → `/councilor/certificates`
-
-## Security behavior
-
-If a signed-in user has no internal portal role, `/staff/login` signs the user out and fails closed.
+Added confirmation dialogs, standard toast messages, permission denied state, and shared empty-state usage for high-risk government portal actions.
 
 ## Changed files
 
-- `src/App.tsx`
-- `src/components/Layout.tsx`
-- `src/pages/StaffLogin.tsx`
-- `docs/ROLE_BASED_PORTAL_LOGIN_V1.md`
+- `src/components/ui/Feedback.tsx`
+- `src/pages/AdminUsers.tsx`
+- `src/pages/AdminWardCouncilors.tsx`
+- `src/pages/AdminComplaintDetail.tsx`
+- `src/pages/AdminCertificateDetail.tsx`
+- `src/pages/CouncilorCertificateDetail.tsx`
+- `docs/UI_SAFETY_CONFIRMATION_V1.md`
 - `PATCH_NOTES.md`
+
+## What changed
+
+1. Role change confirmation added.
+2. Ward councilor reassignment confirmation added.
+3. Certificate reject confirmation added.
+4. Complaint resolved confirmation added.
+5. Certificate delivered confirmation added.
+6. Standard `InlineToast` success/error feedback added.
+7. Standard `PermissionDeniedState` component added.
+8. Standard shared `EmptyState` usage improved.
+
+## Validation
+
+- `npm run typecheck` passed.
+- `npm run build` passed.

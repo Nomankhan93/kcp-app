@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Download, FileCheck2, FileUp, Loader2, RefreshCw, Save } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
-import { AlertBox, EmptyState, LoadingPanel } from '../components/ui/Feedback';
+import { AlertBox, ConfirmDialog, EmptyState, InlineToast, LoadingPanel, PermissionDeniedState } from '../components/ui/Feedback';
 import {
   checkCertificateAccess,
   createCertificateDocumentSignedUrl,
@@ -25,6 +25,11 @@ import type {
 
 type SessionState = 'checking' | 'signed-out' | 'signed-in';
 type AccessRole = 'admin' | 'chairman' | 'staff' | 'certificate_officer' | 'general_councilor' | null;
+
+type PendingCertificateUpdate = {
+  form: FormData;
+  status: CertificateApplicationStatus;
+};
 
 const statusOptions = Object.entries(certificateStatusLabels) as Array<[CertificateApplicationStatus, string]>;
 const officeStatusOptions: Array<[CertificateApplicationStatus, string]> = [
@@ -65,6 +70,7 @@ export function AdminCertificateDetail() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [pendingCertificateUpdate, setPendingCertificateUpdate] = useState<PendingCertificateUpdate | null>(null);
 
   const canTownUpdate = role === 'admin' || role === 'staff' || role === 'certificate_officer';
   const canCouncilorVerify = role === 'admin' || role === 'general_councilor';
@@ -156,11 +162,24 @@ export function AdminCertificateDetail() {
     event.preventDefault();
     if (!application) return;
 
+    const form = new FormData(event.currentTarget);
+    const nextStatus = getFormValue(form, 'status') as CertificateApplicationStatus;
+
+    if (canTownUpdate && application.status !== nextStatus && ['delivered', 'rejected'].includes(nextStatus)) {
+      setPendingCertificateUpdate({ form, status: nextStatus });
+      return;
+    }
+
+    await saveCertificateUpdate(form);
+  }
+
+  async function saveCertificateUpdate(form: FormData) {
+    if (!application) return;
+
     setError('');
     setSuccess('');
     setSaving(true);
 
-    const form = new FormData(event.currentTarget);
     const nextStatus = getFormValue(form, 'status') as CertificateApplicationStatus;
     const nextCouncilorStatus = getFormValue(form, 'councilorStatus') as 'pending' | 'verified' | 'rejected';
     let issuedUpload = null;
@@ -205,6 +224,7 @@ export function AdminCertificateDetail() {
     }
   }
 
+
   if (sessionState === 'signed-out') return <Navigate to="/admin/login" replace />;
 
   return (
@@ -233,7 +253,7 @@ export function AdminCertificateDetail() {
         {loading ? <LoadingPanel message="Loading application..." /> : null}
 
         {allowed === false ? (
-          <AlertBox tone="error" title="Access denied">Your account cannot manage certificate applications.</AlertBox>
+          <PermissionDeniedState title="Access denied" description="Your account cannot manage certificate applications." />
         ) : null}
 
         {!loading && allowed && !application ? (
@@ -351,8 +371,8 @@ export function AdminCertificateDetail() {
                   ) : null}
 
                   {issuedDocument ? <AlertBox tone="success" compact><CheckCircle2 className="mr-2 inline h-4 w-4" /> Prepared certificate has been uploaded.</AlertBox> : null}
-                  {success ? <AlertBox tone="success" compact>{success}</AlertBox> : null}
-                  {error ? <AlertBox tone="error" compact>{error}</AlertBox> : null}
+                  {success ? <InlineToast tone="success" message={success} onDismiss={() => setSuccess('')} /> : null}
+                  {error ? <InlineToast tone="error" message={error} onDismiss={() => setError('')} /> : null}
 
                   <button type="submit" disabled={saving || allowed !== true} className="inline-flex w-full items-center justify-center rounded-2xl bg-civic-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-civic-800 disabled:cursor-not-allowed disabled:opacity-70">
                     {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -379,6 +399,26 @@ export function AdminCertificateDetail() {
           </form>
         ) : null}
       </section>
+      <ConfirmDialog
+        open={Boolean(pendingCertificateUpdate)}
+        title={pendingCertificateUpdate?.status === 'delivered' ? 'Mark certificate as delivered?' : 'Reject certificate application?'}
+        description={(
+          <span>
+            You are about to mark application <strong>{application?.tracking_no}</strong> as <strong>{pendingCertificateUpdate ? certificateStatusLabels[pendingCertificateUpdate.status] : ''}</strong>. This status will be visible to the citizen and saved in the official timeline.
+          </span>
+        )}
+        confirmLabel={pendingCertificateUpdate?.status === 'delivered' ? 'Mark Delivered' : 'Reject Application'}
+        tone={pendingCertificateUpdate?.status === 'delivered' ? 'success' : 'error'}
+        busy={saving}
+        onCancel={() => setPendingCertificateUpdate(null)}
+        onConfirm={() => {
+          if (!pendingCertificateUpdate) return;
+          const form = pendingCertificateUpdate.form;
+          setPendingCertificateUpdate(null);
+          void saveCertificateUpdate(form);
+        }}
+      />
+
     </>
   );
 }

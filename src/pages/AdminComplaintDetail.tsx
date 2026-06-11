@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Camera, ExternalLink, Loader2, LogOut, RefreshCw, Save } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge } from '../components/StatusBadge';
-import { AlertBox, EmptyState, LoadingPanel } from '../components/ui/Feedback';
+import { AlertBox, ConfirmDialog, EmptyState, InlineToast, LoadingPanel, PermissionDeniedState } from '../components/ui/Feedback';
 import {
   checkAdminAccess,
   createPhotoSignedUrl,
@@ -63,6 +63,7 @@ export function AdminComplaintDetail() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [confirmResolvedOpen, setConfirmResolvedOpen] = useState(false);
 
   const selectedStaff = useMemo(() => {
     if (!draft?.assigned_staff_id) return null;
@@ -157,6 +158,17 @@ export function AdminComplaintDetail() {
     });
   }
 
+  function requestSave() {
+    if (!draft) return;
+
+    if (complaint?.status !== 'resolved' && draft.status === 'resolved') {
+      setConfirmResolvedOpen(true);
+      return;
+    }
+
+    void handleSave();
+  }
+
   async function handleSave() {
     if (!draft) return;
 
@@ -232,18 +244,21 @@ export function AdminComplaintDetail() {
         {loading && sessionState === 'checking' ? <LoadingPanel message="Checking admin access..." /> : null}
 
         {access.allowed === false ? (
-          <AlertBox tone="error" title="Access denied">
-            <p>Your account is signed in but not assigned as admin, chairman or staff in user_roles table.</p>
-            <button type="button" onClick={handleLogout} className="mt-4 rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white">
-              Logout
-            </button>
-          </AlertBox>
+          <PermissionDeniedState
+            title="Access denied"
+            description="Your account is signed in but not assigned as admin, chairman or staff in user_roles table."
+            action={(
+              <button type="button" onClick={handleLogout} className="rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white hover:bg-rose-800">
+                Logout
+              </button>
+            )}
+          />
         ) : null}
 
         {access.allowed ? (
           <>
-            {error ? <div className="mb-4"><AlertBox tone="error" compact>{error}</AlertBox></div> : null}
-            {success ? <div className="mb-4"><AlertBox tone="success" compact>{success}</AlertBox></div> : null}
+            {error ? <div className="mb-4"><InlineToast tone="error" message={error} onDismiss={() => setError('')} /></div> : null}
+            {success ? <div className="mb-4"><InlineToast tone="success" message={success} onDismiss={() => setSuccess('')} /></div> : null}
 
             {loading ? <LoadingPanel message="Loading complaint details..." /> : null}
 
@@ -440,7 +455,7 @@ export function AdminComplaintDetail() {
                   </div>
 
                   <button
-                    onClick={handleSave}
+                    onClick={requestSave}
                     disabled={saving}
                     className="mt-5 inline-flex w-full items-center justify-center rounded-2xl bg-civic-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-civic-800 disabled:cursor-not-allowed disabled:opacity-70"
                   >
@@ -453,6 +468,24 @@ export function AdminComplaintDetail() {
           </>
         ) : null}
       </section>
+      <ConfirmDialog
+        open={confirmResolvedOpen}
+        title="Mark complaint as resolved?"
+        description={(
+          <span>
+            This will mark complaint <strong>{draft?.tracking_no}</strong> as resolved and the public tracking timeline will show the latest public remarks. Please confirm that resolution proof and public remarks are correct.
+          </span>
+        )}
+        confirmLabel="Mark Resolved"
+        tone="success"
+        busy={saving}
+        onCancel={() => setConfirmResolvedOpen(false)}
+        onConfirm={() => {
+          setConfirmResolvedOpen(false);
+          void handleSave();
+        }}
+      />
+
     </>
   );
 }

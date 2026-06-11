@@ -2,7 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Download, Loader2, RefreshCw, Save, XCircle } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
-import { AlertBox, EmptyState, LoadingPanel } from '../components/ui/Feedback';
+import { AlertBox, ConfirmDialog, EmptyState, InlineToast, LoadingPanel, PermissionDeniedState } from '../components/ui/Feedback';
 import {
   checkCertificateAccess,
   councilorReviewCertificateApplication,
@@ -19,6 +19,12 @@ import type { CertificateApplicationRow, CertificateDocumentRow, CertificateStat
 
 type SessionState = 'checking' | 'signed-out' | 'signed-in';
 type AccessRole = 'admin' | 'chairman' | 'staff' | 'certificate_officer' | 'general_councilor' | null;
+
+type PendingCouncilorReview = {
+  action: CouncilorReviewAction;
+  councilorRemarks: string;
+  publicRemarks: string;
+};
 
 function formatDateTime(value: string | null) {
   if (!value) return '—';
@@ -42,6 +48,7 @@ export function CouncilorCertificateDetail() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [pendingReview, setPendingReview] = useState<PendingCouncilorReview | null>(null);
 
   const isWardMatch = useMemo(() => {
     if (!profile || !application) return false;
@@ -108,21 +115,32 @@ export function CouncilorCertificateDetail() {
     event.preventDefault();
     if (!application) return;
 
-    setError('');
-    setSuccess('');
-    setSaving(true);
-
     const form = new FormData(event.currentTarget);
     const action = getFormValue(form, 'action') as CouncilorReviewAction;
     const councilorRemarks = getFormValue(form, 'councilorRemarks');
     const publicRemarks = getFormValue(form, 'publicRemarks');
 
+    if (action === 'rejected') {
+      setPendingReview({ action, councilorRemarks, publicRemarks });
+      return;
+    }
+
+    await saveReview({ action, councilorRemarks, publicRemarks });
+  }
+
+  async function saveReview(review: PendingCouncilorReview) {
+    if (!application) return;
+
+    setError('');
+    setSuccess('');
+    setSaving(true);
+
     try {
       await councilorReviewCertificateApplication({
         applicationId: application.id,
-        action,
-        councilorRemarks,
-        publicRemarks,
+        action: review.action,
+        councilorRemarks: review.councilorRemarks,
+        publicRemarks: review.publicRemarks,
       });
 
       setSuccess('Ward verification update saved successfully.');
@@ -133,6 +151,7 @@ export function CouncilorCertificateDetail() {
       setSaving(false);
     }
   }
+
 
   if (sessionState === 'signed-out') return <Navigate to="/admin/login" replace />;
 
@@ -164,7 +183,7 @@ export function CouncilorCertificateDetail() {
         {loading ? <LoadingPanel message="Loading application..." /> : null}
 
         {!loading && role === 'general_councilor' && !profile ? (
-          <AlertBox tone="error" title="Ward assignment missing">Your account has general_councilor role, but no active ward is assigned in ward_councilors.</AlertBox>
+          <PermissionDeniedState title="Ward assignment missing" description="Your account has general_councilor role, but no active ward is assigned in ward_councilors." />
         ) : null}
 
         {!loading && role === 'general_councilor' && profile && application && !isWardMatch ? (
@@ -247,8 +266,8 @@ export function CouncilorCertificateDetail() {
 
                   <AlertBox tone="warning" title="Responsibility note" compact>Only verify when applicant details, ward/address and supporting documents are checked. This action will be recorded with your user account and date/time.</AlertBox>
 
-                  {success ? <AlertBox tone="success" compact>{success}</AlertBox> : null}
-                  {error ? <AlertBox tone="error" compact>{error}</AlertBox> : null}
+                  {success ? <InlineToast tone="success" message={success} onDismiss={() => setSuccess('')} /> : null}
+                  {error ? <InlineToast tone="error" message={error} onDismiss={() => setError('')} /> : null}
 
                   <button type="submit" disabled={saving || !canReview} className="inline-flex w-full items-center justify-center rounded-2xl bg-civic-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-civic-800 disabled:cursor-not-allowed disabled:opacity-70">
                     {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -283,6 +302,26 @@ export function CouncilorCertificateDetail() {
           </form>
         ) : null}
       </section>
+      <ConfirmDialog
+        open={Boolean(pendingReview)}
+        title="Reject ward verification?"
+        description={(
+          <span>
+            You are about to reject application <strong>{application?.tracking_no}</strong> at ward verification stage. This will be recorded against your councilor account and shown in the timeline.
+          </span>
+        )}
+        confirmLabel="Reject Verification"
+        tone="error"
+        busy={saving}
+        onCancel={() => setPendingReview(null)}
+        onConfirm={() => {
+          if (!pendingReview) return;
+          const review = pendingReview;
+          setPendingReview(null);
+          void saveReview(review);
+        }}
+      />
+
     </>
   );
 }

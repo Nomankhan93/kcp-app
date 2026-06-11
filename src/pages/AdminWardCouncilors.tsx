@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
+import { ConfirmDialog, EmptyState, InlineToast, PermissionDeniedState } from "../components/ui/Feedback";
 import {
   checkUserManagementAccess,
   fetchPortalUsersWithRoles,
@@ -30,6 +31,11 @@ type SessionState = "checking" | "signed-out" | "signed-in";
 type AccessState = {
   allowed: boolean | null;
   role: PortalRole | null;
+};
+
+type PendingWardSave = {
+  row: WardCouncilorManagementRow;
+  edit: EditableWardCouncilor;
 };
 
 type EditableWardCouncilor = {
@@ -68,6 +74,7 @@ export function AdminWardCouncilors() {
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [pendingWardSave, setPendingWardSave] = useState<PendingWardSave | null>(null);
 
   const filteredRows = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -161,8 +168,13 @@ export function AdminWardCouncilors() {
     }));
   }
 
-  async function handleSave(row: WardCouncilorManagementRow) {
+  function requestSave(row: WardCouncilorManagementRow) {
     const edit = edits[row.ward] ?? makeEditable(row);
+    setPendingWardSave({ row, edit });
+  }
+
+  async function handleSave(row: WardCouncilorManagementRow, confirmedEdit?: EditableWardCouncilor) {
+    const edit = confirmedEdit ?? edits[row.ward] ?? makeEditable(row);
     setSavingWard(row.ward);
     setMessage("");
     setError("");
@@ -213,19 +225,18 @@ export function AdminWardCouncilors() {
         ) : null}
 
         {access.allowed === false ? (
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800">
-            <h2 className="text-xl font-bold">Access denied</h2>
-            <p className="mt-2 text-sm">
-              Only admin users can manage ward councilor assignments. Chairman
-              users have monitoring/read-only access only.
-            </p>
-            <button
-              onClick={handleLogout}
-              className="mt-4 rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white"
-            >
-              Logout
-            </button>
-          </div>
+          <PermissionDeniedState
+            title="Access denied"
+            description="Only admin users can manage ward councilor assignments. Chairman users have monitoring/read-only access only."
+            action={(
+              <button
+                onClick={handleLogout}
+                className="rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white hover:bg-rose-800"
+              >
+                Logout
+              </button>
+            )}
+          />
         ) : null}
 
         {access.allowed ? (
@@ -292,14 +303,14 @@ export function AdminWardCouncilors() {
               </label>
 
               {message ? (
-                <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-                  {message}
-                </p>
+                <div className="mt-4">
+                  <InlineToast tone="success" message={message} onDismiss={() => setMessage("")} />
+                </div>
               ) : null}
               {error ? (
-                <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-                  {error}
-                </p>
+                <div className="mt-4">
+                  <InlineToast tone="error" message={error} onDismiss={() => setError("")} />
+                </div>
               ) : null}
 
               <div className="mt-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
@@ -325,9 +336,7 @@ export function AdminWardCouncilors() {
                 ) : null}
 
                 {!loading && filteredRows.length === 0 ? (
-                  <div className="px-4 py-10 text-center text-slate-500">
-                    No ward assignments found.
-                  </div>
+                  <EmptyState title="No ward assignments found" description="Run the ward seed SQL and assign councilor users from this page." />
                 ) : null}
 
                 {filteredRows.map((row) => {
@@ -415,7 +424,7 @@ export function AdminWardCouncilors() {
                         </label>
                         <button
                           type="button"
-                          onClick={() => void handleSave(row)}
+                          onClick={() => requestSave(row)}
                           disabled={savingWard === row.ward}
                           className="inline-flex items-center rounded-2xl bg-civic-700 px-4 py-2 text-sm font-bold text-white hover:bg-civic-800 disabled:cursor-not-allowed disabled:opacity-60"
                         >
@@ -462,11 +471,8 @@ export function AdminWardCouncilors() {
 
                     {!loading && filteredRows.length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={5}
-                          className="px-4 py-10 text-center text-slate-500"
-                        >
-                          No ward assignments found.
+                        <td colSpan={5} className="px-4 py-10">
+                          <EmptyState title="No ward assignments found" description="Run the ward seed SQL and assign councilor users from this page." />
                         </td>
                       </tr>
                     ) : null}
@@ -566,7 +572,7 @@ export function AdminWardCouncilors() {
                           <td className="px-4 py-3">
                             <button
                               type="button"
-                              onClick={() => void handleSave(row)}
+                              onClick={() => requestSave(row)}
                               disabled={savingWard === row.ward}
                               className="inline-flex items-center rounded-2xl bg-civic-700 px-4 py-2 text-sm font-bold text-white hover:bg-civic-800 disabled:cursor-not-allowed disabled:opacity-60"
                             >
@@ -588,6 +594,26 @@ export function AdminWardCouncilors() {
           </>
         ) : null}
       </section>
+      <ConfirmDialog
+        open={Boolean(pendingWardSave)}
+        title="Save ward councilor assignment?"
+        description={(
+          <span>
+            You are about to update <strong>{pendingWardSave?.row.ward}</strong>. The selected login user will get ward-based certificate verification access immediately. Previous history will remain saved.
+          </span>
+        )}
+        confirmLabel="Save Assignment"
+        tone="warning"
+        busy={Boolean(pendingWardSave && savingWard === pendingWardSave.row.ward)}
+        onCancel={() => setPendingWardSave(null)}
+        onConfirm={() => {
+          if (!pendingWardSave) return;
+          const { row, edit } = pendingWardSave;
+          setPendingWardSave(null);
+          void handleSave(row, edit);
+        }}
+      />
+
     </>
   );
 }
