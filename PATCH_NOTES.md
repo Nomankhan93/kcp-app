@@ -1,23 +1,34 @@
-# Patch Notes - KCP Security Advisor Fix v1
+# Patch Notes: KCP Admin-Only Role Management Fix v1
 
-## Added
+## Summary
 
-- `supabase/security-advisor-fix-v1.sql`
-- `docs/SECURITY_ADVISOR_FIX_V1.md`
+This patch tightens the portal access model so that only `admin` users can manage portal roles and ward General Councilor assignments.
 
-## Security changes
+## Files changed
 
-- Fixed mutable `search_path` on key trigger/helper functions.
-- Removed broad anonymous `cms-files` storage listing policy.
-- Added staff-only CMS file management policy.
-- Revoked accidental PUBLIC/anon RPC execution from sensitive `SECURITY DEFINER` functions.
-- Re-granted only the required public functions to `anon`.
-- Re-granted required authenticated workflows to `authenticated`.
-- Revoked direct RPC execution for trigger-only citizen notification functions.
-- Added default privilege hardening for future functions.
+- `supabase/admin-only-role-management-fix-v1.sql`
+- `src/lib/userManagement.ts`
+- `src/pages/AdminDashboard.tsx`
+- `src/pages/AdminUsers.tsx`
+- `src/pages/AdminWardCouncilors.tsx`
+- `docs/ADMIN_ONLY_ROLE_MANAGEMENT_FIX_V1.md`
+- `PATCH_NOTES.md`
 
-## Expected result
+## Run SQL
 
-Supabase Security Advisor warnings should reduce significantly, especially anon/public SECURITY DEFINER warnings and search_path warnings.
+```bash
+PGPASSWORD=postgres psql \
+  -h 127.0.0.1 \
+  -p 55322 \
+  -U postgres \
+  -d postgres \
+  -f supabase/admin-only-role-management-fix-v1.sql
+```
 
-Some warnings can intentionally remain for public submit/tracking RPCs and authenticated workflow RPCs. These should be reviewed as accepted risks only after functional testing.
+For cloud Supabase, run the same SQL file in SQL Editor after the existing security advisor fix SQL.
+
+## Expected behavior
+
+- Admin can manage user roles and ward councilor assignments.
+- Chairman can monitor dashboards/reports but cannot manage roles/users.
+- Staff/certificate officer/general councilor cannot manage portal roles.

@@ -176,7 +176,7 @@ export function AdminWardCouncilors() {
         {access.allowed === false ? (
           <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800">
             <h2 className="text-xl font-bold">Access denied</h2>
-            <p className="mt-2 text-sm">Only admin users can manage ward councilor assignments.</p>
+            <p className="mt-2 text-sm">Only admin users can manage ward councilor assignments. Chairman users have monitoring/read-only access only.</p>
             <button onClick={handleLogout} className="mt-4 rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white">
               Logout
             </button>
@@ -187,7 +187,7 @@ export function AdminWardCouncilors() {
           <>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
               <div className="inline-flex rounded-full bg-civic-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-civic-800 ring-1 ring-civic-100">
-                Signed in role: {access.role ?? 'authorized'}
+                Signed in role: {access.role ?? 'authorized'} · Admin-only area
               </div>
               <div className="flex flex-wrap gap-2">
                 <Link to="/admin" className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
@@ -214,7 +214,7 @@ export function AdminWardCouncilors() {
 
             <div className="mt-6 rounded-3xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-900">
               <p className="font-bold">How to use</p>
-              <p className="mt-1">Create the councilor login in Supabase Auth first, then select that user here. Saving assignment automatically gives the selected user the limited general_councilor role.</p>
+              <p className="mt-1">Create the councilor login in Supabase Auth first, then select that user here. Saving assignment automatically gives the selected user the limited general_councilor role. This page is admin-only.</p>
             </div>
 
             <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">

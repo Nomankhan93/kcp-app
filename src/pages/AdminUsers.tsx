@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Loader2, LogOut, RefreshCw, Search, ShieldCheck, Users } from 'lucide-react';
+import { ArrowLeft, Loader2, LogOut, RefreshCw, Search, ShieldCheck, Users } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { checkUserManagementAccess, fetchPortalUsersWithRoles, manageablePortalRoles, setPortalUserRole } from '../lib/userManagement';
 import { supabase } from '../lib/supabase';
@@ -148,7 +148,7 @@ export function AdminUsers() {
         {access.allowed === false ? (
           <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800">
             <h2 className="text-xl font-bold">Access denied</h2>
-            <p className="mt-2 text-sm">Only admin users can manage portal roles.</p>
+            <p className="mt-2 text-sm">Only admin users can manage portal roles. Chairman users have monitoring/read-only access only.</p>
             <button onClick={handleLogout} className="mt-4 rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white">
               Logout
             </button>
@@ -159,7 +159,7 @@ export function AdminUsers() {
           <>
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
               <div className="inline-flex rounded-full bg-civic-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-civic-800 ring-1 ring-civic-100">
-                Signed in role: {access.role ?? 'authorized'}
+                Signed in role: {access.role ?? 'authorized'} · Admin-only area
               </div>
               <div className="flex flex-wrap gap-2">
                 <Link to="/admin" className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
@@ -188,7 +188,7 @@ export function AdminUsers() {
 
             <div className="mt-6 rounded-3xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">
               <p className="font-bold">Important workflow</p>
-              <p className="mt-1">Create the user first in Supabase Authentication, then assign a portal role here. Ward assignment is managed separately from the Ward Councilors page.</p>
+              <p className="mt-1">Create the user first in Supabase Authentication, then assign a portal role here. This page is admin-only; Chairman accounts cannot change roles.</p>
             </div>
 
             <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">

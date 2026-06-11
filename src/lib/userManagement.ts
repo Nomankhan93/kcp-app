@@ -29,7 +29,7 @@ export const manageablePortalRoles: Array<{ value: PortalRole; label: string; de
   {
     value: 'chairman',
     label: 'Chairman',
-    description: 'Monitoring dashboards and reports only. Not used for operational/user management changes.',
+    description: 'Read-only monitoring, chairman dashboard and reports access. Does not manage users or roles.',
   },
   {
     value: 'staff',
