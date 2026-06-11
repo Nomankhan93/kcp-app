@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
 import {
   ArrowLeft,
   CalendarDays,
@@ -9,20 +9,20 @@ import {
   LogOut,
   Printer,
   RefreshCw,
-} from 'lucide-react';
-import { PageHeader } from '../components/PageHeader';
-import { StatusBadge } from '../components/StatusBadge';
-import { checkAdminAccess, fetchAdminComplaints } from '../lib/adminComplaints';
-import { categoryLabels, statusLabels } from '../lib/constants';
-import { supabase } from '../lib/supabase';
-import type { AdminComplaint, ComplaintStatus } from '../lib/types';
+} from "lucide-react";
+import { PageHeader } from "../components/PageHeader";
+import { StatusBadge } from "../components/StatusBadge";
+import { checkAdminAccess, fetchAdminComplaints } from "../lib/adminComplaints";
+import { categoryLabels, statusLabels } from "../lib/constants";
+import { supabase } from "../lib/supabase";
+import type { AdminComplaint, ComplaintStatus } from "../lib/types";
 
-type SessionState = 'checking' | 'signed-out' | 'signed-in';
-type DateFilter = 'today' | '7days' | '30days' | 'month' | 'all';
+type SessionState = "checking" | "signed-out" | "signed-in";
+type DateFilter = "today" | "7days" | "30days" | "month" | "all";
 
 type AccessState = {
   allowed: boolean | null;
-  role: 'admin' | 'chairman' | 'staff' | null;
+  role: "admin" | "chairman" | "staff" | null;
 };
 
 type MetricRow = {
@@ -33,13 +33,17 @@ type MetricRow = {
   urgent: number;
 };
 
-const closedStatuses: ComplaintStatus[] = ['resolved', 'rejected', 'not_related'];
+const closedStatuses: ComplaintStatus[] = [
+  "resolved",
+  "rejected",
+  "not_related",
+];
 const rangeLabels: Record<DateFilter, string> = {
-  today: 'Today',
-  '7days': 'Last 7 Days',
-  '30days': 'Last 30 Days',
-  month: 'This Month',
-  all: 'All Time',
+  today: "Today",
+  "7days": "Last 7 Days",
+  "30days": "Last 30 Days",
+  month: "This Month",
+  all: "All Time",
 };
 
 function startOfToday() {
@@ -56,10 +60,10 @@ function getCutoff(filter: DateFilter) {
   const now = Date.now();
   const oneDay = 24 * 60 * 60 * 1000;
 
-  if (filter === 'all') return null;
-  if (filter === 'today') return startOfToday();
-  if (filter === '7days') return now - 7 * oneDay;
-  if (filter === '30days') return now - 30 * oneDay;
+  if (filter === "all") return null;
+  if (filter === "today") return startOfToday();
+  if (filter === "7days") return now - 7 * oneDay;
+  if (filter === "30days") return now - 30 * oneDay;
   return startOfCurrentMonth();
 }
 
@@ -70,36 +74,43 @@ function isInDateRange(dateValue: string, filter: DateFilter) {
 }
 
 function formatDateTime(value: string | null) {
-  if (!value) return '—';
+  if (!value) return "—";
   return new Date(value).toLocaleString(undefined, {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
 function formatDate(value: string | null) {
-  if (!value) return '—';
-  return new Date(value).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString(undefined, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function formatPercent(value: number) {
-  if (!Number.isFinite(value)) return '0%';
+  if (!Number.isFinite(value)) return "0%";
   return `${Math.round(value)}%`;
 }
 
 function csvCell(value: string | number | null | undefined) {
-  const text = value === null || value === undefined ? '' : String(value);
+  const text = value === null || value === undefined ? "" : String(value);
   return `"${text.replace(/"/g, '""')}"`;
 }
 
-function downloadCsv(filename: string, rows: Array<Array<string | number | null | undefined>>) {
-  const csv = rows.map((row) => row.map(csvCell).join(',')).join('\n');
-  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+function downloadCsv(
+  filename: string,
+  rows: Array<Array<string | number | null | undefined>>,
+) {
+  const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
 
   link.href = url;
   link.download = filename;
@@ -109,46 +120,77 @@ function downloadCsv(filename: string, rows: Array<Array<string | number | null 
   URL.revokeObjectURL(url);
 }
 
-function groupBy(items: AdminComplaint[], getKey: (item: AdminComplaint) => string): MetricRow[] {
+function groupBy(
+  items: AdminComplaint[],
+  getKey: (item: AdminComplaint) => string,
+): MetricRow[] {
   const map = new Map<string, MetricRow>();
 
   for (const item of items) {
-    const key = getKey(item).trim() || 'Not Assigned';
-    const current = map.get(key) ?? { name: key, total: 0, pending: 0, resolved: 0, urgent: 0 };
+    const key = getKey(item).trim() || "Not Assigned";
+    const current = map.get(key) ?? {
+      name: key,
+      total: 0,
+      pending: 0,
+      resolved: 0,
+      urgent: 0,
+    };
 
     current.total += 1;
-    if (item.status === 'resolved') current.resolved += 1;
+    if (item.status === "resolved") current.resolved += 1;
     if (!closedStatuses.includes(item.status)) current.pending += 1;
-    if (item.priority === 'urgent' || item.priority === 'high') current.urgent += 1;
+    if (item.priority === "urgent" || item.priority === "high")
+      current.urgent += 1;
 
     map.set(key, current);
   }
 
-  return Array.from(map.values()).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+  return Array.from(map.values()).sort(
+    (a, b) => b.total - a.total || a.name.localeCompare(b.name),
+  );
 }
 
 export function AdminReports() {
-  const [sessionState, setSessionState] = useState<SessionState>('checking');
-  const [access, setAccess] = useState<AccessState>({ allowed: null, role: null });
+  const [sessionState, setSessionState] = useState<SessionState>("checking");
+  const [access, setAccess] = useState<AccessState>({
+    allowed: null,
+    role: null,
+  });
   const [complaints, setComplaints] = useState<AdminComplaint[]>([]);
-  const [dateFilter, setDateFilter] = useState<DateFilter>('30days');
+  const [dateFilter, setDateFilter] = useState<DateFilter>("30days");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const filteredComplaints = useMemo(() => {
-    return complaints.filter((item) => isInDateRange(item.created_at, dateFilter));
+    return complaints.filter((item) =>
+      isInDateRange(item.created_at, dateFilter),
+    );
   }, [complaints, dateFilter]);
 
   const summary = useMemo(() => {
     const total = filteredComplaints.length;
-    const submitted = filteredComplaints.filter((item) => item.status === 'submitted').length;
-    const received = filteredComplaints.filter((item) => item.status === 'received').length;
-    const inProgress = filteredComplaints.filter((item) => item.status === 'in_progress').length;
-    const resolved = filteredComplaints.filter((item) => item.status === 'resolved').length;
-    const rejected = filteredComplaints.filter((item) => item.status === 'rejected').length;
-    const notRelated = filteredComplaints.filter((item) => item.status === 'not_related').length;
+    const submitted = filteredComplaints.filter(
+      (item) => item.status === "submitted",
+    ).length;
+    const received = filteredComplaints.filter(
+      (item) => item.status === "received",
+    ).length;
+    const inProgress = filteredComplaints.filter(
+      (item) => item.status === "in_progress",
+    ).length;
+    const resolved = filteredComplaints.filter(
+      (item) => item.status === "resolved",
+    ).length;
+    const rejected = filteredComplaints.filter(
+      (item) => item.status === "rejected",
+    ).length;
+    const notRelated = filteredComplaints.filter(
+      (item) => item.status === "not_related",
+    ).length;
     const pending = submitted + received + inProgress;
-    const highPriority = filteredComplaints.filter((item) => item.priority === 'urgent' || item.priority === 'high').length;
+    const highPriority = filteredComplaints.filter(
+      (item) => item.priority === "urgent" || item.priority === "high",
+    ).length;
 
     return {
       total,
@@ -166,15 +208,27 @@ export function AdminReports() {
   }, [filteredComplaints]);
 
   const departmentMetrics = useMemo(() => {
-    return groupBy(filteredComplaints, (item) => item.assigned_department || categoryLabels[item.category] || item.category);
+    return groupBy(
+      filteredComplaints,
+      (item) =>
+        item.assigned_department ||
+        categoryLabels[item.category] ||
+        item.category,
+    );
   }, [filteredComplaints]);
 
   const categoryMetrics = useMemo(() => {
-    return groupBy(filteredComplaints, (item) => categoryLabels[item.category] || item.category);
+    return groupBy(
+      filteredComplaints,
+      (item) => categoryLabels[item.category] || item.category,
+    );
   }, [filteredComplaints]);
 
   const areaMetrics = useMemo(() => {
-    return groupBy(filteredComplaints, (item) => [item.ward, item.area].filter(Boolean).join(' - ') || item.area);
+    return groupBy(
+      filteredComplaints,
+      (item) => [item.ward, item.area].filter(Boolean).join(" - ") || item.area,
+    );
   }, [filteredComplaints]);
 
   const statusMetrics = useMemo(() => {
@@ -186,7 +240,10 @@ export function AdminReports() {
   }, [filteredComplaints]);
 
   const reportRows = useMemo(() => {
-    return [...filteredComplaints].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return [...filteredComplaints].sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
   }, [filteredComplaints]);
 
   useEffect(() => {
@@ -194,15 +251,15 @@ export function AdminReports() {
       const accessCheck = await checkAdminAccess();
 
       if (!accessCheck.signedIn) {
-        setSessionState('signed-out');
+        setSessionState("signed-out");
         setLoading(false);
         return;
       }
 
-      setSessionState('signed-in');
+      setSessionState("signed-in");
       setAccess({ allowed: accessCheck.allowed, role: accessCheck.role });
 
-      if (accessCheck.role === 'admin' || accessCheck.role === 'chairman') {
+      if (accessCheck.role === "admin" || accessCheck.role === "chairman") {
         await loadComplaints();
       } else {
         setLoading(false);
@@ -213,14 +270,18 @@ export function AdminReports() {
   }, []);
 
   async function loadComplaints() {
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       const rows = await fetchAdminComplaints();
       setComplaints(rows);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Unable to load reports.');
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Unable to load reports.",
+      );
     } finally {
       setLoading(false);
     }
@@ -228,7 +289,7 @@ export function AdminReports() {
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    window.location.href = '/admin/login';
+    window.location.href = "/admin/login";
   }
 
   function handlePrint() {
@@ -238,20 +299,20 @@ export function AdminReports() {
   function exportDetailedCsv() {
     downloadCsv(`kunri-complaints-${dateFilter}.csv`, [
       [
-        'Tracking No',
-        'Submitted At',
-        'Citizen Name',
-        'Mobile',
-        'Category',
-        'Area',
-        'Ward',
-        'Mohalla',
-        'Status',
-        'Priority',
-        'Assigned Department',
-        'Assigned To',
-        'Resolved At',
-        'Public Remarks',
+        "Tracking No",
+        "Submitted At",
+        "Citizen Name",
+        "Mobile",
+        "Category",
+        "Area",
+        "Ward",
+        "Mohalla",
+        "Status",
+        "Priority",
+        "Assigned Department",
+        "Assigned To",
+        "Resolved At",
+        "Public Remarks",
       ],
       ...reportRows.map((item) => [
         item.tracking_no,
@@ -274,26 +335,39 @@ export function AdminReports() {
 
   function exportSummaryCsv() {
     downloadCsv(`kunri-report-summary-${dateFilter}.csv`, [
-      ['Report', 'Value'],
-      ['Range', rangeLabels[dateFilter]],
-      ['Generated At', formatDateTime(new Date().toISOString())],
-      ['Total Complaints', summary.total],
-      ['Pending Complaints', summary.pending],
-      ['Resolved Complaints', summary.resolved],
-      ['Resolution Rate', formatPercent(summary.resolutionRate)],
-      ['High/Urgent Complaints', summary.highPriority],
+      ["Report", "Value"],
+      ["Range", rangeLabels[dateFilter]],
+      ["Generated At", formatDateTime(new Date().toISOString())],
+      ["Total Complaints", summary.total],
+      ["Pending Complaints", summary.pending],
+      ["Resolved Complaints", summary.resolved],
+      ["Resolution Rate", formatPercent(summary.resolutionRate)],
+      ["High/Urgent Complaints", summary.highPriority],
       [],
-      ['Department', 'Total', 'Pending', 'Resolved', 'High/Urgent'],
-      ...departmentMetrics.map((item) => [item.name, item.total, item.pending, item.resolved, item.urgent]),
+      ["Department", "Total", "Pending", "Resolved", "High/Urgent"],
+      ...departmentMetrics.map((item) => [
+        item.name,
+        item.total,
+        item.pending,
+        item.resolved,
+        item.urgent,
+      ]),
       [],
-      ['Area/Ward', 'Total', 'Pending', 'Resolved', 'High/Urgent'],
-      ...areaMetrics.map((item) => [item.name, item.total, item.pending, item.resolved, item.urgent]),
+      ["Area/Ward", "Total", "Pending", "Resolved", "High/Urgent"],
+      ...areaMetrics.map((item) => [
+        item.name,
+        item.total,
+        item.pending,
+        item.resolved,
+        item.urgent,
+      ]),
     ]);
   }
 
-  if (sessionState === 'signed-out') return <Navigate to="/admin/login" replace />;
+  if (sessionState === "signed-out")
+    return <Navigate to="/admin/login" replace />;
 
-  const allowed = access.role === 'admin' || access.role === 'chairman';
+  const allowed = access.role === "admin" || access.role === "chairman";
 
   return (
     <>
@@ -304,21 +378,31 @@ export function AdminReports() {
       />
 
       <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {loading && sessionState === 'checking' ? (
+        {loading && sessionState === "checking" ? (
           <div className="flex justify-center py-12 text-slate-500">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Checking reports access...
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Checking reports
+            access...
           </div>
         ) : null}
 
-        {sessionState === 'signed-in' && !allowed ? (
+        {sessionState === "signed-in" && !allowed ? (
           <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800">
             <h2 className="text-xl font-bold">Access denied</h2>
-            <p className="mt-2 text-sm">Reports are available only for accounts assigned as chairman or admin.</p>
+            <p className="mt-2 text-sm">
+              Reports are available only for accounts assigned as chairman or
+              admin.
+            </p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link to="/admin" className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-rose-800 ring-1 ring-rose-200">
+              <Link
+                to="/admin"
+                className="rounded-xl bg-white px-4 py-2 text-sm font-bold text-rose-800 ring-1 ring-rose-200"
+              >
                 Back to Admin
               </Link>
-              <button onClick={handleLogout} className="rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white">
+              <button
+                onClick={handleLogout}
+                className="rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white"
+              >
                 Logout
               </button>
             </div>
@@ -330,10 +414,11 @@ export function AdminReports() {
             <div className="no-print mb-6 flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
               <div>
                 <div className="inline-flex rounded-full bg-civic-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-civic-800 ring-1 ring-civic-100">
-                  Signed in role: {access.role ?? 'authorized'}
+                  Signed in role: {access.role ?? "authorized"}
                 </div>
                 <p className="mt-2 text-sm text-slate-500">
-                  Selected range: {rangeLabels[dateFilter]}. CSV exports do not include CNIC by default.
+                  Selected range: {rangeLabels[dateFilter]}. CSV exports do not
+                  include CNIC by default.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -377,67 +462,210 @@ export function AdminReports() {
             </div>
 
             <div className="no-print mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              {(Object.entries(rangeLabels) as Array<[DateFilter, string]>).map(([value, label]) => (
-                <button
-                  key={value}
-                  onClick={() => setDateFilter(value)}
-                  className={`rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${
-                    dateFilter === value
-                      ? 'border-civic-700 bg-civic-700 text-white shadow-sm'
-                      : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+              {(Object.entries(rangeLabels) as Array<[DateFilter, string]>).map(
+                ([value, label]) => (
+                  <button
+                    key={value}
+                    onClick={() => setDateFilter(value)}
+                    className={`rounded-2xl border px-4 py-3 text-left text-sm font-bold transition ${
+                      dateFilter === value
+                        ? "border-civic-700 bg-civic-700 text-white shadow-sm"
+                        : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ),
+              )}
             </div>
 
-            {error ? <p className="mb-6 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</p> : null}
+            {error ? (
+              <p className="mb-6 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+                {error}
+              </p>
+            ) : null}
+
+            <div className="no-print mb-6 rounded-3xl border border-civic-100 bg-civic-50 p-5 text-civic-900">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h2 className="text-lg font-black">
+                    Official report controls
+                  </h2>
+                  <p className="mt-1 text-sm leading-6">
+                    Select a range, review the summary, then use Summary CSV for
+                    meetings or Detailed CSV for the operational register.
+                  </p>
+                </div>
+                <div className="grid gap-2 text-sm sm:grid-cols-3 lg:min-w-[420px]">
+                  <MiniInfo label="Range" value={rangeLabels[dateFilter]} />
+                  <MiniInfo label="Rows" value={String(reportRows.length)} />
+                  <MiniInfo
+                    label="Generated"
+                    value={formatDate(new Date().toISOString())}
+                  />
+                </div>
+              </div>
+            </div>
 
             <div className="mb-6 hidden rounded-2xl border-b border-slate-200 pb-4 print:block">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-civic-800">Town Committee Kunri</p>
-              <h1 className="mt-1 text-2xl font-black text-slate-950">Complaint Report - {rangeLabels[dateFilter]}</h1>
-              <p className="mt-1 text-sm text-slate-600">Generated: {formatDateTime(new Date().toISOString())}</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-civic-800">
+                Town Committee Kunri
+              </p>
+              <h1 className="mt-1 text-2xl font-black text-slate-950">
+                Complaint Report - {rangeLabels[dateFilter]}
+              </h1>
+              <p className="mt-1 text-sm text-slate-600">
+                Generated: {formatDateTime(new Date().toISOString())}
+              </p>
             </div>
 
             <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-              <ReportCard icon={<FileText className="h-5 w-5" />} label="Total" value={summary.total} helper={rangeLabels[dateFilter]} />
-              <ReportCard icon={<CalendarDays className="h-5 w-5" />} label="Pending" value={summary.pending} helper={formatPercent(summary.pendingRate)} />
-              <ReportCard icon={<FileText className="h-5 w-5" />} label="Submitted" value={summary.submitted} helper="New requests" />
-              <ReportCard icon={<FileText className="h-5 w-5" />} label="In Progress" value={summary.inProgress} helper="Active work" />
-              <ReportCard icon={<FileText className="h-5 w-5" />} label="Resolved" value={summary.resolved} helper={formatPercent(summary.resolutionRate)} />
-              <ReportCard icon={<FileText className="h-5 w-5" />} label="High/Urgent" value={summary.highPriority} helper="Priority" />
+              <ReportCard
+                icon={<FileText className="h-5 w-5" />}
+                label="Total"
+                value={summary.total}
+                helper={rangeLabels[dateFilter]}
+              />
+              <ReportCard
+                icon={<CalendarDays className="h-5 w-5" />}
+                label="Pending"
+                value={summary.pending}
+                helper={formatPercent(summary.pendingRate)}
+              />
+              <ReportCard
+                icon={<FileText className="h-5 w-5" />}
+                label="Submitted"
+                value={summary.submitted}
+                helper="New requests"
+              />
+              <ReportCard
+                icon={<FileText className="h-5 w-5" />}
+                label="In Progress"
+                value={summary.inProgress}
+                helper="Active work"
+              />
+              <ReportCard
+                icon={<FileText className="h-5 w-5" />}
+                label="Resolved"
+                value={summary.resolved}
+                helper={formatPercent(summary.resolutionRate)}
+              />
+              <ReportCard
+                icon={<FileText className="h-5 w-5" />}
+                label="High/Urgent"
+                value={summary.highPriority}
+                helper="Priority"
+              />
             </div>
 
             <div className="mb-6 grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
-              <ReportPanel title="Status summary" description="Complaint count by official workflow status.">
+              <ReportPanel
+                title="Status summary"
+                description="Complaint count by official workflow status."
+              >
                 <div className="space-y-3">
                   {statusMetrics.map((item) => (
-                    <div key={item.status} className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                    <div
+                      key={item.status}
+                      className="flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3"
+                    >
                       <StatusBadge status={item.status} />
-                      <span className="text-xl font-black text-slate-950">{item.total}</span>
+                      <span className="text-xl font-black text-slate-950">
+                        {item.total}
+                      </span>
                     </div>
                   ))}
                 </div>
               </ReportPanel>
 
-              <ReportPanel title="Department workload" description="Total, pending, resolved and priority complaints by department/category.">
-                <MetricTable rows={departmentMetrics} emptyText="No department data found." />
+              <ReportPanel
+                title="Department workload"
+                description="Total, pending, resolved and priority complaints by department/category."
+              >
+                <MetricTable
+                  rows={departmentMetrics}
+                  emptyText="No department data found."
+                />
               </ReportPanel>
             </div>
 
             <div className="mb-6 grid gap-6 lg:grid-cols-2">
-              <ReportPanel title="Category wise report" description="Complaint volume by complaint category.">
-                <MetricTable rows={categoryMetrics} emptyText="No category data found." />
+              <ReportPanel
+                title="Category wise report"
+                description="Complaint volume by complaint category."
+              >
+                <MetricTable
+                  rows={categoryMetrics}
+                  emptyText="No category data found."
+                />
               </ReportPanel>
 
-              <ReportPanel title="Area / ward wise report" description="Complaint volume by area or ward.">
-                <MetricTable rows={areaMetrics} emptyText="No area data found." />
+              <ReportPanel
+                title="Area / ward wise report"
+                description="Complaint volume by area or ward."
+              >
+                <MetricTable
+                  rows={areaMetrics}
+                  emptyText="No area data found."
+                />
               </ReportPanel>
             </div>
 
-            <ReportPanel title="Detailed complaint register" description="Operational register for the selected report range.">
-              <div className="overflow-x-auto">
+            <ReportPanel
+              title="Detailed complaint register"
+              description="Operational register for the selected report range."
+            >
+              <div className="lg:hidden">
+                {reportRows.map((item) => (
+                  <div
+                    key={item.id}
+                    className="border-t border-slate-100 py-4 first:border-t-0"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-mono text-sm font-black text-civic-800">
+                          {item.tracking_no}
+                        </p>
+                        <p className="mt-1 text-sm font-bold text-slate-950">
+                          {item.full_name}
+                        </p>
+                        <p className="text-xs text-slate-500">{item.mobile}</p>
+                      </div>
+                      <StatusBadge status={item.status} />
+                    </div>
+                    <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                      <MiniInfo
+                        label="Date"
+                        value={formatDate(item.created_at)}
+                      />
+                      <MiniInfo
+                        label="Category"
+                        value={categoryLabels[item.category] || item.category}
+                      />
+                      <MiniInfo
+                        label="Area"
+                        value={[item.area, item.ward]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      />
+                      <MiniInfo
+                        label="Assigned"
+                        value={
+                          item.assigned_to || item.assigned_department || "—"
+                        }
+                      />
+                    </div>
+                  </div>
+                ))}
+
+                {!reportRows.length ? (
+                  <div className="px-4 py-8 text-center text-slate-500">
+                    No complaints found for selected range.
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="hidden overflow-x-auto lg:block">
                 <table className="min-w-full divide-y divide-slate-200 text-sm">
                   <thead className="bg-slate-50 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
                     <tr>
@@ -454,26 +682,51 @@ export function AdminReports() {
                   <tbody className="divide-y divide-slate-100">
                     {reportRows.map((item) => (
                       <tr key={item.id} className="align-top">
-                        <td className="px-4 py-3 font-bold text-civic-800">{item.tracking_no}</td>
-                        <td className="px-4 py-3 text-slate-600">{formatDate(item.created_at)}</td>
-                        <td className="px-4 py-3">
-                          <p className="font-semibold text-slate-950">{item.full_name}</p>
-                          <p className="text-xs text-slate-500">{item.mobile}</p>
+                        <td className="px-4 py-3 font-bold text-civic-800">
+                          {item.tracking_no}
                         </td>
-                        <td className="px-4 py-3 text-slate-700">{categoryLabels[item.category] || item.category}</td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {formatDate(item.created_at)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-slate-950">
+                            {item.full_name}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {item.mobile}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {categoryLabels[item.category] || item.category}
+                        </td>
                         <td className="px-4 py-3 text-slate-700">
                           {item.area}
-                          {item.ward ? <span className="block text-xs text-slate-500">{item.ward}</span> : null}
+                          {item.ward ? (
+                            <span className="block text-xs text-slate-500">
+                              {item.ward}
+                            </span>
+                          ) : null}
                         </td>
-                        <td className="px-4 py-3"><StatusBadge status={item.status} /></td>
-                        <td className="px-4 py-3 text-slate-700">{item.assigned_to || item.assigned_department || '—'}</td>
-                        <td className="px-4 py-3 text-slate-600">{formatDate(item.resolved_at)}</td>
+                        <td className="px-4 py-3">
+                          <StatusBadge status={item.status} />
+                        </td>
+                        <td className="px-4 py-3 text-slate-700">
+                          {item.assigned_to || item.assigned_department || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-slate-600">
+                          {formatDate(item.resolved_at)}
+                        </td>
                       </tr>
                     ))}
 
                     {!reportRows.length ? (
                       <tr>
-                        <td colSpan={8} className="px-4 py-8 text-center text-slate-500">No complaints found for selected range.</td>
+                        <td
+                          colSpan={8}
+                          className="px-4 py-8 text-center text-slate-500"
+                        >
+                          No complaints found for selected range.
+                        </td>
                       </tr>
                     ) : null}
                   </tbody>
@@ -487,12 +740,35 @@ export function AdminReports() {
   );
 }
 
-function ReportCard({ icon, label, value, helper }: { icon: React.ReactNode; label: string; value: number | string; helper: string }) {
+function MiniInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-white/70 px-3 py-2 ring-1 ring-black/5">
+      <p className="text-[11px] font-bold uppercase tracking-wide opacity-60">
+        {label}
+      </p>
+      <p className="mt-1 font-black">{value || "—"}</p>
+    </div>
+  );
+}
+
+function ReportCard({
+  icon,
+  label,
+  value,
+  helper,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+  helper: string;
+}) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm print:break-inside-avoid">
       <div className="flex items-center justify-between gap-3">
         <div className="rounded-2xl bg-civic-50 p-3 text-civic-800">{icon}</div>
-        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">{label}</p>
+        <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+          {label}
+        </p>
       </div>
       <p className="mt-4 text-3xl font-black text-slate-950">{value}</p>
       <p className="mt-1 text-xs font-medium text-slate-500">{helper}</p>
@@ -500,7 +776,15 @@ function ReportCard({ icon, label, value, helper }: { icon: React.ReactNode; lab
   );
 }
 
-function ReportPanel({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+function ReportPanel({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm print:break-inside-avoid print:border-slate-300 print:shadow-none">
       <div className="mb-4">
@@ -512,33 +796,75 @@ function ReportPanel({ title, description, children }: { title: string; descript
   );
 }
 
-function MetricTable({ rows, emptyText }: { rows: MetricRow[]; emptyText: string }) {
-  if (!rows.length) return <p className="rounded-2xl bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">{emptyText}</p>;
+function MetricTable({
+  rows,
+  emptyText,
+}: {
+  rows: MetricRow[];
+  emptyText: string;
+}) {
+  if (!rows.length)
+    return (
+      <p className="rounded-2xl bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+        {emptyText}
+      </p>
+    );
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-slate-200 text-sm">
-        <thead className="bg-slate-50 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
-          <tr>
-            <th className="px-4 py-3">Name</th>
-            <th className="px-4 py-3 text-right">Total</th>
-            <th className="px-4 py-3 text-right">Pending</th>
-            <th className="px-4 py-3 text-right">Resolved</th>
-            <th className="px-4 py-3 text-right">High/Urgent</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {rows.map((item) => (
-            <tr key={item.name}>
-              <td className="px-4 py-3 font-semibold text-slate-800">{item.name}</td>
-              <td className="px-4 py-3 text-right font-bold text-slate-950">{item.total}</td>
-              <td className="px-4 py-3 text-right text-amber-700">{item.pending}</td>
-              <td className="px-4 py-3 text-right text-emerald-700">{item.resolved}</td>
-              <td className="px-4 py-3 text-right text-rose-700">{item.urgent}</td>
+    <>
+      <div className="space-y-3 lg:hidden">
+        {rows.map((item) => (
+          <div
+            key={item.name}
+            className="rounded-2xl border border-slate-100 bg-slate-50 p-4"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <p className="font-bold text-slate-900">{item.name}</p>
+              <p className="text-xl font-black text-slate-950">{item.total}</p>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+              <MiniInfo label="Pending" value={String(item.pending)} />
+              <MiniInfo label="Resolved" value={String(item.resolved)} />
+              <MiniInfo label="High/Urgent" value={String(item.urgent)} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto lg:block">
+        <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <thead className="bg-slate-50 text-left text-xs font-bold uppercase tracking-wide text-slate-500">
+            <tr>
+              <th className="px-4 py-3">Name</th>
+              <th className="px-4 py-3 text-right">Total</th>
+              <th className="px-4 py-3 text-right">Pending</th>
+              <th className="px-4 py-3 text-right">Resolved</th>
+              <th className="px-4 py-3 text-right">High/Urgent</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {rows.map((item) => (
+              <tr key={item.name}>
+                <td className="px-4 py-3 font-semibold text-slate-800">
+                  {item.name}
+                </td>
+                <td className="px-4 py-3 text-right font-bold text-slate-950">
+                  {item.total}
+                </td>
+                <td className="px-4 py-3 text-right text-amber-700">
+                  {item.pending}
+                </td>
+                <td className="px-4 py-3 text-right text-emerald-700">
+                  {item.resolved}
+                </td>
+                <td className="px-4 py-3 text-right text-rose-700">
+                  {item.urgent}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
