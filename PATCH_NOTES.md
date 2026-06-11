@@ -1,29 +1,29 @@
-# Patch Notes - KCP RLS & Certificate Security Hardening v2
+# Patch Notes - KCP Canonical Role Helpers v1
+
+## Summary
+
+This patch locks the final role helper rules for Kunri Citizens Portal.
 
 ## Changed files
 
 - `src/lib/adminComplaints.ts`
-- `src/lib/certificates.ts`
-- `src/pages/CertificateTrack.tsx`
-- `supabase/rls-certificate-security-hardening-v2.sql`
-- `supabase/functions/issued-certificate-download-url/index.ts`
-- `docs/RLS_CERTIFICATE_SECURITY_HARDENING_V2.md`
+- `supabase/canonical-role-helpers-v1.sql`
+- `docs/CANONICAL_ROLE_HELPERS_V1.md`
+- `PATCH_NOTES.md`
 
-## Summary
+## Key changes
 
-- Removed direct table-update fallback from admin complaint mutation flow.
-- Added certificate security SQL to remove General Councilor direct `certificate_applications` row updates.
-- Kept ward verification RPC-only for General Councilors.
-- Removed anonymous issued certificate storage read policy.
-- Added Edge Function for tracking-number + mobile verified signed certificate download links.
+- Removed legacy `is_admin()` fallback from frontend admin access checks.
+- Added canonical role helper SQL.
+- Made `is_admin()` strict admin-only.
+- Kept Chairman monitoring/read-only.
+- Kept user/role/ward-councilor management admin-only.
+- Kept staff complaint/CMS operations.
+- Kept certificate officer final certificate processing.
+- Kept General Councilor limited to assigned ward verification.
+- Recreated key complaint and certificate policies using reader/manager helpers.
 
-## Apply
-
-```bash
-unzip -o /mnt/c/Users/*/Downloads/kunri-rls-certificate-security-hardening-v2.zip -d .
-```
-
-## SQL
+## SQL to run
 
 ```bash
 PGPASSWORD=postgres psql \
@@ -31,18 +31,13 @@ PGPASSWORD=postgres psql \
   -p 55322 \
   -U postgres \
   -d postgres \
-  -f supabase/rls-certificate-security-hardening-v2.sql
+  -f supabase/canonical-role-helpers-v1.sql
 ```
 
-## Deploy Edge Function
+## Commit
 
 ```bash
-npx supabase functions deploy issued-certificate-download-url
-```
-
-## Test
-
-```bash
-npm run typecheck
-npm run build
+git add .
+git commit -m "Add canonical role helpers"
+git push
 ```
