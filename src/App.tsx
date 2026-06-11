@@ -17,7 +17,7 @@ const AdminContentMessages = lazyNamed(() => import('./pages/AdminContentMessage
 const AdminContentNews = lazyNamed(() => import('./pages/AdminContentNews'), 'AdminContentNews');
 const AdminContentNotices = lazyNamed(() => import('./pages/AdminContentNotices'), 'AdminContentNotices');
 const AdminDashboard = lazyNamed(() => import('./pages/AdminDashboard'), 'AdminDashboard');
-const AdminLogin = lazyNamed(() => import('./pages/AdminLogin'), 'AdminLogin');
+const StaffLogin = lazyNamed(() => import('./pages/StaffLogin'), 'StaffLogin');
 const AdminReports = lazyNamed(() => import('./pages/AdminReports'), 'AdminReports');
 const AdminUsers = lazyNamed(() => import('./pages/AdminUsers'), 'AdminUsers');
 const AdminWardCouncilors = lazyNamed(() => import('./pages/AdminWardCouncilors'), 'AdminWardCouncilors');
@@ -81,6 +81,7 @@ export default function App() {
             <Route path="/citizen/complaints/:id" element={<CitizenComplaintDetail />} />
             <Route path="/citizen/certificates/:id" element={<CitizenCertificateDetail />} />
             <Route path="/citizen/notifications" element={<CitizenNotifications />} />
+            <Route path="/staff/login" element={<StaffLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/chairman-dashboard" element={<ChairmanDashboard />} />
             <Route path="/admin/reports" element={<AdminReports />} />
@@ -95,7 +96,7 @@ export default function App() {
             <Route path="/admin/certificates/final-processing" element={<AdminCertificateFinalProcessing />} />
             <Route path="/admin/certificates/:id" element={<AdminCertificateDetail />} />
             <Route path="/admin/complaints/:id" element={<AdminComplaintDetail />} />
-            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/login" element={<Navigate to="/staff/login" replace />} />
             <Route path="/councilor/certificates" element={<CouncilorCertificates />} />
             <Route path="/councilor/certificates/:id" element={<CouncilorCertificateDetail />} />
             <Route path="*" element={<Navigate to="/" replace />} />

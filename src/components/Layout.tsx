@@ -27,15 +27,11 @@ const citizenServiceItems: NavItem[] = [
   { to: '/track', label: 'Track Complaint' },
   { to: '/certificates/apply', label: 'Apply Certificate' },
   { to: '/certificates/track', label: 'Track Certificate' },
-  { to: '/citizen/dashboard', label: 'Citizen Dashboard', matchPrefix: true },
-  { to: '/citizen/notifications', label: 'Citizen Notifications', matchPrefix: true },
 ];
 
 const staffAccessItems: NavItem[] = [
   { to: '/citizen/login', label: 'Citizen Login', matchPrefix: true },
-  { to: '/admin/login', label: 'Staff Login' },
-  { to: '/admin', label: 'Admin Dashboard', matchPrefix: true },
-  { to: '/councilor/certificates', label: 'Councilor Dashboard', matchPrefix: true },
+  { to: '/staff/login', label: 'Staff Portal', matchPrefix: true },
 ];
 
 function isItemActive(pathname: string, item: NavItem) {

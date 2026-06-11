@@ -1,44 +1,39 @@
-# Patch 4 — KCP Canonical Migration Chain v1
+# Patch 5 — KCP Role-Based Portal Login v1
 
 ## Priority
 
-High
+Medium / High
 
-## Purpose
+## Summary
 
-This patch creates a canonical Supabase migration chain for Kunri Citizens Portal so local and cloud environments can be rebuilt in the same order with the same final DB behavior.
+This patch cleans the public navigation and adds a dedicated role-based staff login page.
 
-## Added files
+## Changes
 
-```text
-supabase/migrations/001_initial_schema.sql
-supabase/migrations/002_complaints.sql
-supabase/migrations/003_certificates.sql
-supabase/migrations/004_councilor_verification.sql
-supabase/migrations/005_cms.sql
-supabase/migrations/006_citizen_auth_profile.sql
-supabase/migrations/007_security_hardening.sql
-docs/CANONICAL_MIGRATION_CHAIN_V1.md
-docs/archive/SUPABASE_LEGACY_PATCH_FILES.md
-PATCH_NOTES.md
-```
+- Added `/staff/login` route.
+- Kept `/admin/login` as a redirect to `/staff/login`.
+- Added `StaffLogin.tsx` with role-based redirect logic.
+- Removed direct internal dashboard links from public header.
+- Public header now shows only Citizen Login and Staff Portal under Login / Access.
+- Removed Citizen Dashboard and Citizen Notifications from public Citizen Services dropdown.
+- Added documentation for role-based portal login.
 
-## Final canonical order
+## Role redirects
 
-```text
-001_initial_schema.sql
-002_complaints.sql
-003_certificates.sql
-004_councilor_verification.sql
-005_cms.sql
-006_citizen_auth_profile.sql
-007_security_hardening.sql
-```
+- `admin` → `/admin`
+- `chairman` → `/admin/chairman-dashboard`
+- `staff` → `/admin`
+- `certificate_officer` → `/admin/certificates/final-processing`
+- `general_councilor` → `/councilor/certificates`
 
-## Important
+## Security behavior
 
-- For an existing cloud database, do not reset production just to apply this migration chain.
-- Use this chain for clean local/cloud rebuilds and future deployments.
-- Migration `007_security_hardening.sql` is intentionally last because it locks the final role model and security policies.
-- Keep General Councilor certificate updates RPC-only.
-- Keep issued certificate files private.
+If a signed-in user has no internal portal role, `/staff/login` signs the user out and fails closed.
+
+## Changed files
+
+- `src/App.tsx`
+- `src/components/Layout.tsx`
+- `src/pages/StaffLogin.tsx`
+- `docs/ROLE_BASED_PORTAL_LOGIN_V1.md`
+- `PATCH_NOTES.md`
