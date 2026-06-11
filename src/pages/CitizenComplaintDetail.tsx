@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
+import { InfoItem } from '../components/ui/DataDisplay';
+import { AlertBox, EmptyState, LoadingPanel } from '../components/ui/Feedback';
 import { fetchMyCitizenComplaintDetail, fetchMyCitizenComplaintTimeline, formatCitizenStatus, getCitizenAuthState } from '../lib/citizenAuth';
 import type { CitizenComplaintDetailRow, CitizenComplaintTimelineRow } from '../lib/types';
 
@@ -55,13 +57,11 @@ export function CitizenComplaintDetail() {
         </Link>
 
         {loading ? (
-          <div className="flex items-center rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading complaint details...
-          </div>
+          <LoadingPanel message="Loading complaint details..." />
         ) : error ? (
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800">{error}</div>
+          <AlertBox tone="error">{error}</AlertBox>
         ) : !complaint ? (
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">Complaint not found or not linked with your account.</div>
+          <EmptyState title="Complaint not found" description="This complaint is either not linked with your citizen account or the tracking record is unavailable." />
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1fr_0.7fr]">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -74,12 +74,12 @@ export function CitizenComplaintDetail() {
               </div>
 
               <dl className="mt-6 grid gap-4 sm:grid-cols-2">
-                <Detail label="Category" value={formatCitizenStatus(complaint.category)} />
-                <Detail label="Department" value={complaint.assigned_department || 'Not assigned yet'} />
-                <Detail label="Area" value={complaint.area} />
-                <Detail label="Ward" value={complaint.ward || 'Not provided'} />
-                <Detail label="Mohalla / Street" value={complaint.mohalla || 'Not provided'} />
-                <Detail label="Submitted" value={new Date(complaint.created_at).toLocaleString()} />
+                <InfoItem label="Category" value={formatCitizenStatus(complaint.category)} />
+                <InfoItem label="Department" value={complaint.assigned_department || 'Not assigned yet'} />
+                <InfoItem label="Area" value={complaint.area} />
+                <InfoItem label="Ward" value={complaint.ward || 'Not provided'} />
+                <InfoItem label="Mohalla / Street" value={complaint.mohalla || 'Not provided'} />
+                <InfoItem label="Submitted" value={new Date(complaint.created_at).toLocaleString()} />
               </dl>
 
               <div className="mt-6 rounded-2xl bg-slate-50 p-4">
@@ -103,15 +103,6 @@ export function CitizenComplaintDetail() {
   );
 }
 
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-      <dt className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{label}</dt>
-      <dd className="mt-1 text-sm font-semibold text-slate-800">{value}</dd>
-    </div>
-  );
-}
-
 function TimelinePanel({ timeline }: { timeline: CitizenComplaintTimelineRow[] }) {
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -128,7 +119,7 @@ function TimelinePanel({ timeline }: { timeline: CitizenComplaintTimelineRow[] }
             </div>
           ))
         ) : (
-          <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">No public timeline yet.</p>
+          <EmptyState title="No public timeline yet" description="Official updates will appear here as the office processes your complaint." />
         )}
       </div>
     </div>

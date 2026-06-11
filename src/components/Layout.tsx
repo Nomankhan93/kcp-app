@@ -1,6 +1,6 @@
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 type NavItem = {
   to: string;
@@ -10,36 +10,32 @@ type NavItem = {
 
 const primaryNavItems: NavItem[] = [
   { to: '/', label: 'Home' },
+  { to: '/about', label: 'Introduction' },
+  { to: '/leadership-messages', label: 'Leadership' },
   { to: '/services', label: 'Services' },
   { to: '/contact', label: 'Contact' },
-];
-
-const complaintItems: NavItem[] = [
-  { to: '/submit', label: 'Submit Complaint' },
-  { to: '/track', label: 'Track Complaint' },
-];
-
-const certificateItems: NavItem[] = [
-  { to: '/certificates/apply', label: 'Apply Certificate' },
-  { to: '/certificates/track', label: 'Track Certificate' },
 ];
 
 const publicUpdateItems: NavItem[] = [
   { to: '/notices', label: 'Public Notices' },
   { to: '/news', label: 'News / Updates' },
   { to: '/downloads', label: 'Downloads / Forms' },
-  { to: '/about', label: 'Introduction' },
-  { to: '/leadership-messages', label: 'Leadership Messages' },
 ];
 
-const loginItems: NavItem[] = [
-  { to: '/citizen/login', label: 'Citizen Login' },
+const citizenServiceItems: NavItem[] = [
+  { to: '/submit', label: 'Submit Complaint' },
+  { to: '/track', label: 'Track Complaint' },
+  { to: '/certificates/apply', label: 'Apply Certificate' },
+  { to: '/certificates/track', label: 'Track Certificate' },
   { to: '/citizen/dashboard', label: 'Citizen Dashboard', matchPrefix: true },
   { to: '/citizen/notifications', label: 'Citizen Notifications', matchPrefix: true },
+];
+
+const staffAccessItems: NavItem[] = [
+  { to: '/citizen/login', label: 'Citizen Login', matchPrefix: true },
   { to: '/admin/login', label: 'Staff Login' },
   { to: '/admin', label: 'Admin Dashboard', matchPrefix: true },
-  { to: '/admin/chairman-dashboard', label: 'Chairman Dashboard', matchPrefix: true },
-  { to: '/councilor/certificates', label: 'Councilor Verification', matchPrefix: true },
+  { to: '/councilor/certificates', label: 'Councilor Dashboard', matchPrefix: true },
 ];
 
 function isItemActive(pathname: string, item: NavItem) {
@@ -70,26 +66,23 @@ function DesktopDropdown({ label, items }: { label: string; items: NavItem[] }) 
     <div className="group relative">
       <button
         type="button"
+        aria-haspopup="menu"
+        aria-expanded={active}
         className={`inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-semibold transition ${
           active ? 'bg-civic-50 text-civic-800' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'
         }`}
-        aria-haspopup="menu"
-        aria-expanded={active}
       >
         {label}
         <ChevronDown className="h-4 w-4 transition group-hover:rotate-180 group-focus-within:rotate-180" />
       </button>
 
-      <div
-        className="invisible absolute right-0 top-full z-40 w-64 translate-y-2 rounded-2xl border border-slate-100 bg-white p-2 opacity-0 shadow-xl transition group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100"
-        role="menu"
-      >
+      <div role="menu" className="invisible absolute right-0 top-full z-40 w-64 translate-y-2 rounded-2xl border border-slate-100 bg-white p-2 opacity-0 shadow-xl transition group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
         {items.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
-            className={() => dropdownLinkClass(isItemActive(location.pathname, item))}
             role="menuitem"
+            className={() => dropdownLinkClass(isItemActive(location.pathname, item))}
           >
             {item.label}
           </NavLink>
@@ -124,8 +117,22 @@ function MobileSection({ title, items, closeMenu }: { title: string; items: NavI
 export function Layout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setOpen(false);
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-2xl focus:bg-civic-800 focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white">
+        Skip to main content
+      </a>
       <header className="sticky top-0 z-30 border-b border-emerald-100 bg-white/95 shadow-sm backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 lg:px-8">
           <Link to="/" className="flex flex-none items-center gap-3" aria-label="Kunri Citizens Portal home">
@@ -151,7 +158,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             onClick={() => setOpen((value) => !value)}
             className="inline-flex items-center rounded-xl border border-slate-200 p-2 text-slate-700 xl:hidden"
             aria-label="Toggle navigation"
-            aria-controls="mobile-navigation"
             aria-expanded={open}
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -169,31 +175,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </NavLink>
             ))}
 
-            <DesktopDropdown label="Complaints" items={complaintItems} />
-            <DesktopDropdown label="Certificates" items={certificateItems} />
-            <DesktopDropdown label="Updates" items={publicUpdateItems} />
-            <DesktopDropdown label="Login" items={loginItems} />
+            <DesktopDropdown label="Public Updates" items={publicUpdateItems} />
+            <DesktopDropdown label="Citizen Services" items={citizenServiceItems} />
+            <DesktopDropdown label="Login / Access" items={staffAccessItems} />
           </nav>
         </div>
 
         {open ? (
-          <nav
-            id="mobile-navigation"
-            className="max-h-[78vh] overflow-y-auto border-t border-slate-100 bg-white px-4 py-3 xl:hidden"
-            aria-label="Mobile navigation"
-          >
+          <nav className="max-h-[78vh] overflow-y-auto border-t border-slate-100 bg-white px-4 py-3 xl:hidden" aria-label="Mobile navigation">
             <div className="mx-auto flex max-w-7xl flex-col gap-3">
               <MobileSection title="Main" items={primaryNavItems} closeMenu={() => setOpen(false)} />
-              <MobileSection title="Complaints" items={complaintItems} closeMenu={() => setOpen(false)} />
-              <MobileSection title="Certificates" items={certificateItems} closeMenu={() => setOpen(false)} />
-              <MobileSection title="Updates" items={publicUpdateItems} closeMenu={() => setOpen(false)} />
-              <MobileSection title="Login / Dashboards" items={loginItems} closeMenu={() => setOpen(false)} />
+              <MobileSection title="Public Updates" items={publicUpdateItems} closeMenu={() => setOpen(false)} />
+              <MobileSection title="Citizen Services" items={citizenServiceItems} closeMenu={() => setOpen(false)} />
+              <MobileSection title="Login / Access" items={staffAccessItems} closeMenu={() => setOpen(false)} />
             </div>
           </nav>
         ) : null}
       </header>
 
-      <main>{children}</main>
+      <main id="main-content" tabIndex={-1}>{children}</main>
 
       <footer className="mt-16 border-t border-slate-200 bg-white">
         <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 text-sm text-slate-600 sm:px-6 lg:grid-cols-[1fr_auto] lg:px-8">

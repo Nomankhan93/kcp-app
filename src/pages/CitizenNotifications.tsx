@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bell, Loader2 } from 'lucide-react';
+import { ArrowLeft, Bell } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
+import { AlertBox, EmptyState, LoadingPanel } from '../components/ui/Feedback';
 import { fetchCitizenNotifications, formatCitizenStatus, getCitizenAuthState, markCitizenNotificationsRead } from '../lib/citizenAuth';
 import type { CitizenNotificationRow } from '../lib/types';
 
@@ -52,11 +53,9 @@ export function CitizenNotifications() {
         </div>
 
         {loading ? (
-          <div className="flex items-center rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading notifications...
-          </div>
+          <LoadingPanel message="Loading notifications..." />
         ) : error ? (
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800">{error}</div>
+          <AlertBox tone="error">{error}</AlertBox>
         ) : notifications.length ? (
           <div className="space-y-3">
             {notifications.map((item) => (
@@ -85,7 +84,7 @@ export function CitizenNotifications() {
             ))}
           </div>
         ) : (
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">No notifications yet.</div>
+          <EmptyState title="No notifications yet" description="Important complaint and certificate updates will appear here after your records are linked with this citizen account." />
         )}
       </section>
     </>

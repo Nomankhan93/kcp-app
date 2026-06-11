@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Camera, ExternalLink, Loader2, LogOut, RefreshCw, Save } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge } from '../components/StatusBadge';
+import { AlertBox, EmptyState, LoadingPanel } from '../components/ui/Feedback';
 import {
   checkAdminAccess,
   createPhotoSignedUrl,
@@ -228,40 +229,34 @@ export function AdminComplaintDetail() {
           </div>
         </div>
 
-        {loading && sessionState === 'checking' ? (
-          <div className="flex justify-center py-12 text-slate-500">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Checking admin access...
-          </div>
-        ) : null}
+        {loading && sessionState === 'checking' ? <LoadingPanel message="Checking admin access..." /> : null}
 
         {access.allowed === false ? (
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800">
-            <h2 className="text-xl font-bold">Access denied</h2>
-            <p className="mt-2 text-sm">Your account is signed in but not assigned as admin, chairman or staff in user_roles table.</p>
-            <button onClick={handleLogout} className="mt-4 rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white">
+          <AlertBox tone="error" title="Access denied">
+            <p>Your account is signed in but not assigned as admin, chairman or staff in user_roles table.</p>
+            <button type="button" onClick={handleLogout} className="mt-4 rounded-xl bg-rose-700 px-4 py-2 text-sm font-bold text-white">
               Logout
             </button>
-          </div>
+          </AlertBox>
         ) : null}
 
         {access.allowed ? (
           <>
-            {error ? <p className="mb-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</p> : null}
-            {success ? <p className="mb-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">{success}</p> : null}
+            {error ? <div className="mb-4"><AlertBox tone="error" compact>{error}</AlertBox></div> : null}
+            {success ? <div className="mb-4"><AlertBox tone="success" compact>{success}</AlertBox></div> : null}
 
-            {loading ? (
-              <div className="flex justify-center py-12 text-slate-500">
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading complaint details...
-              </div>
-            ) : null}
+            {loading ? <LoadingPanel message="Loading complaint details..." /> : null}
 
             {!loading && !draft ? (
-              <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center text-slate-600">
-                Complaint not found.{' '}
-                <button onClick={() => navigate('/admin')} className="font-bold text-civic-800 hover:underline">
-                  Go back to dashboard
-                </button>
-              </div>
+              <EmptyState
+                title="Complaint not found"
+                description="This complaint could not be loaded, or your account does not have access to it."
+                action={(
+                  <button type="button" onClick={() => navigate('/admin')} className="rounded-2xl bg-civic-700 px-4 py-2 text-sm font-bold text-white hover:bg-civic-800">
+                    Go back to dashboard
+                  </button>
+                )}
+              />
             ) : null}
 
             {!loading && draft ? (
@@ -312,7 +307,7 @@ export function AdminComplaintDetail() {
                   <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h3 className="text-lg font-black text-slate-950">Status timeline</h3>
                     <div className="mt-4 space-y-3">
-                      {history.length === 0 ? <p className="text-sm text-slate-500">No timeline history yet.</p> : null}
+                      {history.length === 0 ? <EmptyState title="No timeline history yet" description="Status changes and officer remarks will appear here after the first update." /> : null}
                       {history.map((item) => (
                         <div key={item.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -329,7 +324,7 @@ export function AdminComplaintDetail() {
                   <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h3 className="text-lg font-black text-slate-950">Attachments log</h3>
                     <div className="mt-4 space-y-3">
-                      {attachments.length === 0 ? <p className="text-sm text-slate-500">No attachments recorded.</p> : null}
+                      {attachments.length === 0 ? <EmptyState title="No attachments recorded" description="Citizen and resolution attachments will appear here when uploaded." /> : null}
                       {attachments.map((item) => {
                         const signedUrl = signedUrls[item.storage_path];
                         return (

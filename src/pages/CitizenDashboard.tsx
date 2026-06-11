@@ -2,6 +2,8 @@ import { FormEvent, type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Bell, FileCheck2, Loader2, LogOut, PlusCircle, Search, UserCircle2 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
+import { AlertBox, EmptyState, LoadingPanel } from '../components/ui/Feedback';
+import { ProgressMeter } from '../components/ui/DataDisplay';
 import {
   calculateProfileCompletion,
   claimCitizenRecord,
@@ -95,9 +97,7 @@ export function CitizenDashboard() {
   if (loading) {
     return (
       <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="flex items-center rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading citizen dashboard...
-        </div>
+        <LoadingPanel message="Loading citizen dashboard..." />
       </section>
     );
   }
@@ -153,16 +153,17 @@ export function CitizenDashboard() {
         </div>
 
         {actionRequiredCertificates.length ? (
-          <div className="mb-6 rounded-3xl border border-amber-200 bg-amber-50 p-5 text-amber-950 shadow-sm">
-            <h3 className="text-lg font-black">Action required</h3>
-            <p className="mt-1 text-sm">Some certificate applications need correction or additional information.</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {actionRequiredCertificates.map((item) => (
-                <Link key={item.id} to={`/citizen/certificates/${item.id}`} className="rounded-full bg-white px-3 py-1 text-xs font-bold text-amber-800 ring-1 ring-amber-200">
-                  {item.tracking_no}
-                </Link>
-              ))}
-            </div>
+          <div className="mb-6">
+            <AlertBox tone="warning" title="Action required">
+              <p>Some certificate applications need correction or additional information.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {actionRequiredCertificates.map((item) => (
+                  <Link key={item.id} to={`/citizen/certificates/${item.id}`} className="rounded-full bg-white px-3 py-1 text-xs font-bold text-amber-800 ring-1 ring-amber-200">
+                    {item.tracking_no}
+                  </Link>
+                ))}
+              </div>
+            </AlertBox>
           </div>
         ) : null}
 
@@ -220,8 +221,8 @@ export function CitizenDashboard() {
                 <Field label="Tracking Number" name="trackingNo" required placeholder="KCP-2026-000001" />
                 <Field label="Mobile Number" name="mobile" required placeholder="03xxxxxxxxx" />
 
-                {claimError ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{claimError}</p> : null}
-                {claimMessage ? <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{claimMessage}</p> : null}
+                {claimError ? <AlertBox tone="error" compact>{claimError}</AlertBox> : null}
+                {claimMessage ? <AlertBox tone="success" compact>{claimMessage}</AlertBox> : null}
 
                 <button type="submit" disabled={claiming} className="inline-flex w-full items-center justify-center rounded-2xl bg-civic-700 px-4 py-3 text-sm font-bold text-white hover:bg-civic-800 disabled:opacity-70">
                   {claiming ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
@@ -262,7 +263,7 @@ function Panel({ title, emptyText, children }: { title: string; emptyText: strin
   return (
     <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <h3 className="text-lg font-black text-slate-950">{title}</h3>
-      <div className="mt-4 space-y-3">{hasChildren ? children : <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">{emptyText}</p>}</div>
+      <div className="mt-4 space-y-3">{hasChildren ? children : <EmptyState title="Nothing linked yet" description={emptyText} />}</div>
     </div>
   );
 }

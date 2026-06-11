@@ -2,6 +2,8 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, Loader2, Upload } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
+import { InfoItem } from '../components/ui/DataDisplay';
+import { AlertBox, EmptyState, LoadingPanel } from '../components/ui/Feedback';
 import {
   createCitizenCertificateDocumentSignedUrl,
   fetchMyCitizenCertificateDetail,
@@ -112,13 +114,11 @@ export function CitizenCertificateDetail() {
         </Link>
 
         {loading ? (
-          <div className="flex items-center rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading certificate application...
-          </div>
+          <LoadingPanel message="Loading certificate application..." />
         ) : error && !application ? (
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800">{error}</div>
+          <AlertBox tone="error">{error}</AlertBox>
         ) : !application ? (
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">Certificate application not found or not linked with your account.</div>
+          <EmptyState title="Certificate application not found" description="This application is either not linked with your citizen account or the tracking record is unavailable." />
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1fr_0.7fr]">
             <div className="space-y-6">
@@ -132,14 +132,14 @@ export function CitizenCertificateDetail() {
                 </div>
 
                 <dl className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <Detail label="Certificate Type" value={`${formatCitizenStatus(application.certificate_type)} Certificate`} />
-                  <Detail label="Subject Name" value={application.subject_name} />
-                  <Detail label="Event Date" value={application.event_date} />
-                  <Detail label="Event Place" value={application.event_place} />
-                  <Detail label="Ward" value={application.ward} />
-                  <Detail label="Area" value={application.area} />
-                  <Detail label="Councilor Status" value={formatCitizenStatus(application.councilor_status)} />
-                  <Detail label="Certificate No" value={application.certificate_number || 'Not issued yet'} />
+                  <InfoItem label="Certificate Type" value={`${formatCitizenStatus(application.certificate_type)} Certificate`} />
+                  <InfoItem label="Subject Name" value={application.subject_name} />
+                  <InfoItem label="Event Date" value={application.event_date} />
+                  <InfoItem label="Event Place" value={application.event_place} />
+                  <InfoItem label="Ward" value={application.ward} />
+                  <InfoItem label="Area" value={application.area} />
+                  <InfoItem label="Councilor Status" value={formatCitizenStatus(application.councilor_status)} />
+                  <InfoItem label="Certificate No" value={application.certificate_number || 'Not issued yet'} />
                 </dl>
 
                 {application.public_remarks ? (
@@ -179,8 +179,8 @@ export function CitizenCertificateDetail() {
                       {correctionFiles.length ? <span className="mt-2 text-xs font-bold">{correctionFiles.length} file(s) selected</span> : null}
                     </label>
 
-                    {error ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</p> : null}
-                    {message ? <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{message}</p> : null}
+                    {error ? <AlertBox tone="error" compact>{error}</AlertBox> : null}
+                    {message ? <AlertBox tone="success" compact>{message}</AlertBox> : null}
 
                     <button type="submit" disabled={submitting} className="inline-flex items-center rounded-2xl bg-amber-700 px-5 py-3 text-sm font-bold text-white hover:bg-amber-800 disabled:opacity-70">
                       {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -198,15 +198,6 @@ export function CitizenCertificateDetail() {
         )}
       </section>
     </>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-      <dt className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{label}</dt>
-      <dd className="mt-1 text-sm font-semibold text-slate-800">{value}</dd>
-    </div>
   );
 }
 
@@ -228,7 +219,7 @@ function DocumentsPanel({ documents }: { documents: CitizenCertificateDocumentRo
             </div>
           ))
         ) : (
-          <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">No documents found.</p>
+          <EmptyState title="No documents found" description="Uploaded citizen documents will appear here after they are linked with this application." />
         )}
       </div>
     </div>
@@ -251,7 +242,7 @@ function TimelinePanel({ timeline }: { timeline: Array<{ id: string; status: str
             </div>
           ))
         ) : (
-          <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">No public timeline yet.</p>
+          <EmptyState title="No public timeline yet" description="Ward and office updates will appear here as the application moves forward." />
         )}
       </div>
     </div>

@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
+import { AlertBox, LoadingPanel } from '../components/ui/Feedback';
 import { fetchCitizenProfile, getCitizenAuthState, saveCitizenProfile } from '../lib/citizenAuth';
 import type { CitizenProfileRow } from '../lib/types';
 
@@ -64,9 +65,7 @@ export function CitizenProfile() {
   if (loading) {
     return (
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="flex items-center rounded-3xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading citizen profile...
-        </div>
+        <LoadingPanel message="Loading citizen profile..." />
       </section>
     );
   }
@@ -107,8 +106,8 @@ export function CitizenProfile() {
             </label>
           </div>
 
-          {error ? <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</p> : null}
-          {message ? <p className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{message}</p> : null}
+          {error ? <div className="mt-4"><AlertBox tone="error" compact>{error}</AlertBox></div> : null}
+          {message ? <div className="mt-4"><AlertBox tone="success" compact>{message}</AlertBox></div> : null}
 
           <button
             type="submit"

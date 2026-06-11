@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Eye, FileCheck2, Loader2, RefreshCw, Search } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Eye, FileCheck2, RefreshCw, Search } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
+import { AlertBox, EmptyState, LoadingPanel } from '../components/ui/Feedback';
 import { checkCertificateAccess, fetchCertificateApplications } from '../lib/certificates';
 import { certificateStatusBadgeClasses, certificateStatusLabels, certificateTypeLabels } from '../lib/constants';
 import type { CertificateApplicationRow, CertificateApplicationStatus, CertificateType } from '../lib/types';
@@ -145,10 +146,7 @@ export function AdminCertificateFinalProcessing() {
         </div>
 
         {access.allowed === false || (access.allowed && !canUseFinalProcessing) ? (
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800">
-            <h2 className="text-xl font-bold">Access denied</h2>
-            <p className="mt-2 text-sm">Only Town Committee admin, staff or certificate officer can use final certificate processing. General Councilors should use the ward verification dashboard.</p>
-          </div>
+          <AlertBox tone="error" title="Access denied">Only Town Committee admin, staff or certificate officer can use final certificate processing. General Councilors should use the ward verification dashboard.</AlertBox>
         ) : null}
 
         {canUseFinalProcessing ? (
@@ -178,7 +176,7 @@ export function AdminCertificateFinalProcessing() {
                 <Select value={dateFilter} onChange={(value) => setDateFilter(value as DateFilter)} options={[["all", "All Time"], ["today", "Today"], ["7days", "Last 7 Days"], ["30days", "Last 30 Days"]]} />
               </div>
 
-              {error ? <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</p> : null}
+              {error ? <div className="mt-4"><AlertBox tone="error" compact>{error}</AlertBox></div> : null}
 
               <div className="mt-5 overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-100 text-sm">
@@ -198,14 +196,14 @@ export function AdminCertificateFinalProcessing() {
                     {loading ? (
                       <tr>
                         <td colSpan={8} className="px-4 py-10 text-center text-slate-500">
-                          <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" /> Loading final processing queue...
+                          <LoadingPanel message="Loading final processing queue..." compact />
                         </td>
                       </tr>
                     ) : null}
 
                     {!loading && filtered.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="px-4 py-10 text-center text-slate-500">No final processing applications found.</td>
+                        <td colSpan={8} className="px-4 py-10"><EmptyState title="No final processing applications found" description="Verified certificates ready for Town Office processing will appear here." /></td>
                       </tr>
                     ) : null}
 

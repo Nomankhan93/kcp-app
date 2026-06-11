@@ -41,3 +41,23 @@ textarea {
     color: #0f172a !important;
   }
 }
+:focus-visible {
+  outline: 3px solid #059669;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+::selection {
+  background: #d1fae5;
+  color: #064e3b;
+}

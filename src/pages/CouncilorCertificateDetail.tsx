@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Download, Loader2, RefreshCw, Save, ShieldAlert, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Download, Loader2, RefreshCw, Save, XCircle } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
+import { AlertBox, EmptyState, LoadingPanel } from '../components/ui/Feedback';
 import {
   checkCertificateAccess,
   councilorReviewCertificateApplication,
@@ -154,42 +155,24 @@ export function CouncilorCertificateDetail() {
         </div>
 
         {role && role !== 'general_councilor' ? (
-          <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm">
-            <h2 className="text-xl font-black">General Councilor role required</h2>
-            <p className="mt-2 text-sm">This screen is reserved for ward General Councilor verification. Admin/chairman users should use the admin certificate detail page.</p>
+          <AlertBox tone="warning" title="General Councilor role required">
+            <p>This screen is reserved for ward General Councilor verification. Admin/chairman users should use the admin certificate detail page.</p>
             {id ? <Link to={`/admin/certificates/${id}`} className="mt-4 inline-flex rounded-2xl bg-civic-700 px-4 py-2 text-sm font-bold text-white hover:bg-civic-800">Open Admin Detail</Link> : null}
-          </div>
+          </AlertBox>
         ) : null}
 
-        {loading ? (
-          <div className="flex justify-center py-12 text-slate-500">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading application...
-          </div>
-        ) : null}
+        {loading ? <LoadingPanel message="Loading application..." /> : null}
 
         {!loading && role === 'general_councilor' && !profile ? (
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800 shadow-sm">
-            <h2 className="text-xl font-black">Ward assignment missing</h2>
-            <p className="mt-2 text-sm">Your account has general_councilor role, but no active ward is assigned in ward_councilors.</p>
-          </div>
+          <AlertBox tone="error" title="Ward assignment missing">Your account has general_councilor role, but no active ward is assigned in ward_councilors.</AlertBox>
         ) : null}
 
         {!loading && role === 'general_councilor' && profile && application && !isWardMatch ? (
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800 shadow-sm">
-            <div className="flex gap-3">
-              <ShieldAlert className="mt-1 h-6 w-6" />
-              <div>
-                <h2 className="text-xl font-black">This application is not from your ward</h2>
-                <p className="mt-2 text-sm">Your assigned ward is {profile.ward}. This application belongs to {application.ward}.</p>
-              </div>
-            </div>
-          </div>
+          <AlertBox tone="error" title="This application is not from your ward">Your assigned ward is {profile.ward}. This application belongs to {application.ward}.</AlertBox>
         ) : null}
 
         {!loading && role === 'general_councilor' && !application ? (
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm">
-            <h2 className="text-xl font-bold text-slate-950">Application not found</h2>
-          </div>
+          <EmptyState title="Application not found" description="This certificate application could not be loaded for your assigned ward." />
         ) : null}
 
         {application && role === 'general_councilor' && profile ? (
@@ -262,13 +245,10 @@ export function CouncilorCertificateDetail() {
                   <TextArea label="Councilor Remarks" name="councilorRemarks" defaultValue={application.councilor_remarks ?? ''} disabled={!canReview} required />
                   <TextArea label="Public Remarks for Citizen" name="publicRemarks" defaultValue={application.public_remarks ?? ''} disabled={!canReview} />
 
-                  <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-100">
-                    <p className="font-bold">Responsibility note</p>
-                    <p className="mt-1">Only verify when applicant details, ward/address and supporting documents are checked. This action will be recorded with your user account and date/time.</p>
-                  </div>
+                  <AlertBox tone="warning" title="Responsibility note" compact>Only verify when applicant details, ward/address and supporting documents are checked. This action will be recorded with your user account and date/time.</AlertBox>
 
-                  {success ? <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{success}</p> : null}
-                  {error ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</p> : null}
+                  {success ? <AlertBox tone="success" compact>{success}</AlertBox> : null}
+                  {error ? <AlertBox tone="error" compact>{error}</AlertBox> : null}
 
                   <button type="submit" disabled={saving || !canReview} className="inline-flex w-full items-center justify-center rounded-2xl bg-civic-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-civic-800 disabled:cursor-not-allowed disabled:opacity-70">
                     {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -288,7 +268,7 @@ export function CouncilorCertificateDetail() {
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h3 className="text-lg font-black text-slate-950">Timeline</h3>
                 <div className="mt-4 space-y-3">
-                  {history.length === 0 ? <p className="text-sm text-slate-500">No official updates yet.</p> : null}
+                  {history.length === 0 ? <EmptyState title="No official updates yet" description="Ward verification and office processing updates will appear here." /> : null}
                   {history.map((item) => (
                     <div key={item.id} className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
                       <p className="text-sm font-bold text-slate-950">{certificateStatusLabels[item.status]}</p>

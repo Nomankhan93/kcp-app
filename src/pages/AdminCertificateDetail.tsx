@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Download, FileCheck2, FileUp, Loader2, RefreshCw, Save, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Download, FileCheck2, FileUp, Loader2, RefreshCw, Save } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
+import { AlertBox, EmptyState, LoadingPanel } from '../components/ui/Feedback';
 import {
   checkCertificateAccess,
   createCertificateDocumentSignedUrl,
@@ -229,23 +230,14 @@ export function AdminCertificateDetail() {
           </button>
         </div>
 
-        {loading ? (
-          <div className="flex justify-center py-12 text-slate-500">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading application...
-          </div>
-        ) : null}
+        {loading ? <LoadingPanel message="Loading application..." /> : null}
 
         {allowed === false ? (
-          <div className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-rose-800">
-            <h2 className="text-xl font-bold">Access denied</h2>
-            <p className="mt-2 text-sm">Your account cannot manage certificate applications.</p>
-          </div>
+          <AlertBox tone="error" title="Access denied">Your account cannot manage certificate applications.</AlertBox>
         ) : null}
 
         {!loading && allowed && !application ? (
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm">
-            <h2 className="text-xl font-bold text-slate-950">Application not found</h2>
-          </div>
+          <EmptyState title="Application not found" description="This certificate application could not be loaded, or your account does not have access to it." />
         ) : null}
 
         {application ? (
@@ -275,17 +267,9 @@ export function AdminCertificateDetail() {
               </div>
 
               {isOfficeQueueStatus(application.status) ? (
-                <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-amber-950 shadow-sm">
-                  <div className="flex items-start gap-3">
-                    <ShieldCheck className="mt-0.5 h-5 w-5 flex-none" />
-                    <div>
-                      <h3 className="font-black">Final office processing required</h3>
-                      <p className="mt-1 text-sm leading-6">
-                        After ward verification, Town Committee office should verify records, prepare the official certificate, upload the signed/scanned certificate and then mark it ready or delivered.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                <AlertBox tone="warning" title="Final office processing required">
+                  After ward verification, Town Committee office should verify records, prepare the official certificate, upload the signed/scanned certificate and then mark it ready or delivered.
+                </AlertBox>
               ) : null}
 
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -366,9 +350,9 @@ export function AdminCertificateDetail() {
                     </label>
                   ) : null}
 
-                  {issuedDocument ? <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"><CheckCircle2 className="mr-2 inline h-4 w-4" /> Prepared certificate has been uploaded.</p> : null}
-                  {success ? <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{success}</p> : null}
-                  {error ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</p> : null}
+                  {issuedDocument ? <AlertBox tone="success" compact><CheckCircle2 className="mr-2 inline h-4 w-4" /> Prepared certificate has been uploaded.</AlertBox> : null}
+                  {success ? <AlertBox tone="success" compact>{success}</AlertBox> : null}
+                  {error ? <AlertBox tone="error" compact>{error}</AlertBox> : null}
 
                   <button type="submit" disabled={saving || allowed !== true} className="inline-flex w-full items-center justify-center rounded-2xl bg-civic-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-civic-800 disabled:cursor-not-allowed disabled:opacity-70">
                     {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -380,7 +364,7 @@ export function AdminCertificateDetail() {
               <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h3 className="text-lg font-black text-slate-950">Status timeline</h3>
                 <div className="mt-4 space-y-3">
-                  {history.length === 0 ? <p className="text-sm text-slate-500">No official updates yet.</p> : null}
+                  {history.length === 0 ? <EmptyState title="No official updates yet" description="Office and councilor updates will appear here after the first status change." /> : null}
                   {history.map((item) => (
                     <div key={item.id} className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
                       <p className="text-sm font-bold text-slate-950">{certificateStatusLabels[item.status]}</p>
