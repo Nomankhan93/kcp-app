@@ -1,9 +1,32 @@
 import { FormEvent, useState } from 'react';
-import { Clock3, Download, FileCheck2, Loader2, Search } from 'lucide-react';
+import { CheckCircle2, Circle, Clock3, Download, FileCheck2, Loader2, Search } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { certificateStatusBadgeClasses, certificateStatusLabels, certificateTypeLabels } from '../lib/constants';
 import { createIssuedCertificateSignedUrl, trackCertificateApplication } from '../lib/certificates';
-import type { CertificateStatusHistoryRow, PublicCertificateApplication } from '../lib/types';
+import type { CertificateApplicationStatus, CertificateStatusHistoryRow, PublicCertificateApplication } from '../lib/types';
+
+const standardSteps: CertificateApplicationStatus[] = [
+  'submitted',
+  'councilor_review',
+  'councilor_verified',
+  'town_review',
+  'certificate_uploaded',
+  'ready_for_collection',
+  'delivered',
+];
+
+function nextCertificateStep(status: CertificateApplicationStatus) {
+  if (status === 'submitted') return 'Next step: Your application will be sent for ward General Councilor review.';
+  if (status === 'councilor_review') return 'Next step: Your assigned ward General Councilor will verify the application details.';
+  if (status === 'councilor_verified') return 'Next step: Town Committee office will start final certificate processing.';
+  if (status === 'town_review') return 'Next step: Certificate officer will prepare or upload the certificate after final checks.';
+  if (status === 'need_more_info') return 'Action needed: Please follow the official remarks and provide correction or missing information.';
+  if (status === 'certificate_uploaded') return 'Next step: Download/view the uploaded certificate or wait for collection instructions.';
+  if (status === 'ready_for_collection') return 'Next step: Visit the office according to official collection instructions.';
+  if (status === 'delivered') return 'Completed: Certificate has been delivered/closed in the system.';
+  if (status === 'councilor_rejected') return 'Closed: Ward verification rejected the application. Please read official remarks.';
+  return 'Closed: The application was rejected. Please read official remarks for reason.';
+}
 
 export function CertificateTrack() {
   const [loading, setLoading] = useState(false);
@@ -49,7 +72,7 @@ export function CertificateTrack() {
         description="Enter your certificate tracking number and mobile number to view ward verification and Town Committee certificate status."
       />
 
-      <section className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         <form onSubmit={handleSubmit} className="grid gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-[1fr_1fr_auto] sm:p-6">
           <label className="block">
             <span className="text-sm font-semibold text-slate-700">Tracking Number</span>
@@ -65,6 +88,8 @@ export function CertificateTrack() {
             <input
               name="mobile"
               required
+              inputMode="tel"
+              autoComplete="tel"
               placeholder="03xxxxxxxxx"
               className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none ring-civic-600 transition focus:ring-2"
             />
@@ -89,7 +114,7 @@ export function CertificateTrack() {
         ) : null}
 
         {application ? (
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_340px]">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex flex-col gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -99,6 +124,13 @@ export function CertificateTrack() {
                 <span className={`inline-flex w-fit rounded-full px-3 py-1 text-xs font-bold ring-1 ${certificateStatusBadgeClasses[application.status]}`}>
                   {certificateStatusLabels[application.status]}
                 </span>
+              </div>
+
+              <CertificateProgress status={application.status} />
+
+              <div className="mt-5 rounded-2xl bg-civic-50 p-4 text-sm text-civic-900 ring-1 ring-civic-100">
+                <p className="font-bold">Current status: {certificateStatusLabels[application.status]}</p>
+                <p className="mt-1">{nextCertificateStep(application.status)}</p>
               </div>
 
               <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -147,11 +179,7 @@ export function CertificateTrack() {
                 {timeline.length === 0 ? <p className="text-sm text-slate-500">Timeline will appear after official updates.</p> : null}
 
                 {timeline.map((item, index) => (
-                  <div key={`${item.status}-${item.changed_at}-${index}`} className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                    <p className="text-sm font-bold text-slate-950">{certificateStatusLabels[item.status]}</p>
-                    <p className="mt-1 text-xs text-slate-500">{new Date(item.changed_at).toLocaleString()}</p>
-                    {item.public_remarks ? <p className="mt-2 text-sm text-slate-700">{item.public_remarks}</p> : null}
-                  </div>
+                  <TimelineItem key={`${item.status}-${item.changed_at}-${index}`} item={item} isLast={index === timeline.length - 1} />
                 ))}
               </div>
             </aside>
@@ -159,6 +187,54 @@ export function CertificateTrack() {
         ) : null}
       </section>
     </>
+  );
+}
+
+function CertificateProgress({ status }: { status: CertificateApplicationStatus }) {
+  const currentIndex = standardSteps.indexOf(status);
+  const closedEarly = status === 'rejected' || status === 'councilor_rejected';
+  const needsInfo = status === 'need_more_info';
+
+  return (
+    <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {standardSteps.map((step, index) => {
+          const done = !closedEarly && !needsInfo && currentIndex >= index;
+          const active = status === step;
+          return (
+            <div key={step} className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 ring-1 ring-slate-200">
+              {done ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Circle className="h-4 w-4 text-slate-300" />}
+              <span className={`text-xs font-bold ${active ? 'text-civic-800' : done ? 'text-slate-800' : 'text-slate-500'}`}>
+                {certificateStatusLabels[step]}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      {closedEarly || needsInfo ? (
+        <p className={`mt-3 rounded-xl bg-white px-3 py-2 text-xs font-semibold ring-1 ${needsInfo ? 'text-orange-700 ring-orange-100' : 'text-rose-700 ring-rose-100'}`}>
+          {needsInfo ? 'This application needs correction or more information before it can continue.' : 'This application was closed before the normal delivery path.'}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function TimelineItem({ item, isLast }: { item: CertificateStatusHistoryRow; isLast: boolean }) {
+  return (
+    <div className="relative flex gap-3">
+      <div className="flex flex-col items-center">
+        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-civic-50 text-civic-700 ring-1 ring-civic-100">
+          <CheckCircle2 className="h-4 w-4" />
+        </span>
+        {!isLast ? <span className="mt-2 h-full min-h-8 w-px bg-slate-200" /> : null}
+      </div>
+      <div className="min-w-0 flex-1 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200">
+        <p className="text-sm font-bold text-slate-950">{certificateStatusLabels[item.status]}</p>
+        <p className="mt-1 text-xs text-slate-500">{new Date(item.changed_at).toLocaleString()}</p>
+        {item.public_remarks ? <p className="mt-2 text-sm text-slate-700">{item.public_remarks}</p> : null}
+      </div>
+    </div>
   );
 }
 

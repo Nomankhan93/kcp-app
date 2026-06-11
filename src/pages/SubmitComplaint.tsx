@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Loader2, Upload } from 'lucide-react';
+import { CheckCircle2, ClipboardList, Loader2, MapPin, Upload, UserRound, X } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { getCitizenAreas, getComplaintCategories, submitComplaint, validateComplaintPhoto } from '../lib/complaints';
 import type { CitizenAreaRow, ComplaintCategory, ComplaintCategoryRow } from '../lib/types';
@@ -11,6 +11,11 @@ function selectedAreaFromValue(value: string, areas: CitizenAreaRow[]) {
 
 function selectedCategoryFromValue(value: string, categories: ComplaintCategoryRow[]) {
   return categories.find((category) => category.id === value || category.slug === value) ?? null;
+}
+
+function formatFileSize(size: number) {
+  if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function SubmitComplaint() {
@@ -125,7 +130,7 @@ export function SubmitComplaint() {
         description="Submit sanitation, street light, drainage, water, road, encroachment and municipal record complaints. A tracking number will be generated after successful submission."
       />
 
-      <section className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+      <section className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
         {trackingNo ? (
           <div className="mb-6 rounded-3xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-900">
             <div className="flex items-start gap-3">
@@ -142,93 +147,140 @@ export function SubmitComplaint() {
           </div>
         ) : null}
 
-        <form onSubmit={handleSubmit} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+        <form onSubmit={handleSubmit} className="space-y-6 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
           <div className="hidden" aria-hidden="true">
             <label>Leave this field blank
               <input name="website" tabIndex={-1} autoComplete="off" />
             </label>
           </div>
           {loadingLookups ? (
-            <div className="mb-5 flex items-center rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-500 ring-1 ring-slate-200">
+            <div className="flex items-center rounded-2xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-500 ring-1 ring-slate-200">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading categories and areas...
             </div>
           ) : null}
 
-          <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Full Name" name="fullName" required placeholder="Citizen full name" />
-            <Field label="Mobile Number" name="mobile" type="tel" required placeholder="03xxxxxxxxx" />
-            <Field label="CNIC (Optional)" name="cnic" placeholder="xxxxx-xxxxxxx-x" />
+          <StepSection
+            step="1"
+            icon={<UserRound className="h-5 w-5" />}
+            title="Citizen details"
+            description="Use the same mobile number later to track the complaint. CNIC is optional for public tracking."
+          >
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Full Name" name="fullName" required placeholder="Citizen full name" autoComplete="name" />
+              <Field label="Mobile Number" name="mobile" type="tel" required placeholder="03xxxxxxxxx" inputMode="tel" autoComplete="tel" />
+              <Field label="CNIC (Optional)" name="cnic" placeholder="xxxxx-xxxxxxx-x" inputMode="numeric" autoComplete="off" />
+            </div>
+          </StepSection>
 
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Area / Ward</span>
-              <select
-                name="areaId"
-                value={selectedAreaId}
-                onChange={(event) => setSelectedAreaId(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none ring-civic-600 transition focus:ring-2"
-              >
-                <option value="">Select area / ward</option>
-                {areas.map((area) => (
-                  <option key={area.id} value={area.id}>
-                    {area.name}{area.ward ? ` · ${area.ward}` : ''}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <StepSection
+            step="2"
+            icon={<MapPin className="h-5 w-5" />}
+            title="Location"
+            description="Select the nearest area or write mohalla/street manually so staff can identify the location quickly."
+          >
+            <div className="grid gap-5 sm:grid-cols-2">
+              <label className="block">
+                <span className="text-sm font-semibold text-slate-700">Area / Ward</span>
+                <select
+                  name="areaId"
+                  value={selectedAreaId}
+                  onChange={(event) => setSelectedAreaId(event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none ring-civic-600 transition focus:ring-2"
+                >
+                  <option value="">Select area / ward</option>
+                  {areas.map((area) => (
+                    <option key={area.id} value={area.id}>
+                      {area.name}{area.ward ? ` · ${area.ward}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            {showManualArea ? <Field label="Area / Mohalla" name="manualArea" required placeholder="e.g. Main Bazaar, Ward 3" /> : null}
-            <Field label="Ward (Optional)" name="ward" placeholder="e.g. Ward 01" />
-            <Field label="Mohalla / Street (Optional)" name="mohalla" placeholder="e.g. Jinnah Colony, Street 2" />
+              {showManualArea ? <Field label="Area / Mohalla" name="manualArea" required placeholder="e.g. Main Bazaar, Ward 3" /> : null}
+              <Field label="Ward (Optional)" name="ward" placeholder="e.g. Ward 01" />
+              <Field label="Mohalla / Street (Optional)" name="mohalla" placeholder="e.g. Jinnah Colony, Street 2" />
+            </div>
+          </StepSection>
 
-            <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Complaint Category</span>
-              <select
-                name="categoryId"
+          <StepSection
+            step="3"
+            icon={<ClipboardList className="h-5 w-5" />}
+            title="Complaint details"
+            description="Choose the correct service category and write enough detail for faster assignment."
+          >
+            <div className="grid gap-5 sm:grid-cols-2">
+              <label className="block sm:col-span-2">
+                <span className="text-sm font-semibold text-slate-700">Complaint Category</span>
+                <select
+                  name="categoryId"
+                  required
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none ring-civic-600 transition focus:ring-2"
+                >
+                  <option value="">Select complaint category</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}{category.department ? ` · ${category.department}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <label className="mt-5 block">
+              <span className="text-sm font-semibold text-slate-700">Complaint Details</span>
+              <textarea
+                name="details"
                 required
+                rows={5}
+                minLength={15}
+                placeholder="Write complete complaint details, exact location and any useful information."
                 className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none ring-civic-600 transition focus:ring-2"
-              >
-                <option value="">Select complaint category</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}{category.department ? ` · ${category.department}` : ''}
-                  </option>
-                ))}
-              </select>
+              />
+              <span className="mt-1 block text-xs text-slate-500">Minimum 15 characters recommended so staff can understand the issue.</span>
             </label>
+
+            <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 transition hover:bg-slate-100">
+              <label htmlFor="complaint-photo" className="flex cursor-pointer flex-col items-center justify-center px-4 py-4 text-center">
+                <Upload className="h-7 w-7 text-civic-700" />
+                <span className="mt-2 text-sm font-semibold text-slate-800">Upload photo proof optional</span>
+                <span className="mt-1 text-xs text-slate-500">JPG, PNG or WEBP. Max 5MB.</span>
+                <input
+                  id="complaint-photo"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  onChange={(event) => handlePhotoChange(event.target.files?.[0] ?? null)}
+                />
+              </label>
+              {photoFile ? (
+                <div className="mt-3 flex flex-col gap-3 rounded-2xl bg-white p-3 text-left ring-1 ring-slate-200 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-civic-800">{photoFile.name}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">Selected photo · {formatFileSize(photoFile.size)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPhotoFile(null)}
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
+                  >
+                    <X className="mr-1 h-3.5 w-3.5" /> Remove
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </StepSection>
+
+          {error ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</p> : null}
+
+          <div className="rounded-2xl bg-civic-50 p-4 text-sm text-civic-900 ring-1 ring-civic-100">
+            <p className="font-bold">Before submitting</p>
+            <p className="mt-1">Please confirm your mobile number, area and complaint details are correct. The tracking number will appear after submission.</p>
           </div>
-
-          <label className="mt-5 block">
-            <span className="text-sm font-semibold text-slate-700">Complaint Details</span>
-            <textarea
-              name="details"
-              required
-              rows={5}
-              minLength={15}
-              placeholder="Write complete complaint details, exact location and any useful information."
-              className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none ring-civic-600 transition focus:ring-2"
-            />
-            <span className="mt-1 block text-xs text-slate-500">Minimum 15 characters recommended so staff can understand the issue.</span>
-          </label>
-
-          <label className="mt-5 flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center transition hover:bg-slate-100">
-            <Upload className="h-7 w-7 text-civic-700" />
-            <span className="mt-2 text-sm font-semibold text-slate-800">Upload photo proof optional</span>
-            <span className="mt-1 text-xs text-slate-500">JPG, PNG or WEBP. Max 5MB.</span>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="sr-only"
-              onChange={(event) => handlePhotoChange(event.target.files?.[0] ?? null)}
-            />
-            {photoFile ? <span className="mt-2 text-xs font-semibold text-civic-700">Selected: {photoFile.name}</span> : null}
-          </label>
-
-          {error ? <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">{error}</p> : null}
 
           <button
             type="submit"
             disabled={loading || loadingLookups}
-            className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-civic-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-civic-800 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+            className="inline-flex w-full items-center justify-center rounded-2xl bg-civic-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-civic-800 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
           >
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Submit Complaint
@@ -239,27 +291,65 @@ export function SubmitComplaint() {
   );
 }
 
+function StepSection({
+  step,
+  icon,
+  title,
+  description,
+  children,
+}: {
+  step: string;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-3xl border border-slate-200 bg-white p-4 ring-1 ring-slate-100 sm:p-5">
+      <div className="mb-5 flex gap-3 border-b border-slate-100 pb-4">
+        <div className="flex h-10 w-10 flex-none items-center justify-center rounded-2xl bg-civic-50 font-black text-civic-800">
+          {step}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-civic-700">
+            {icon}
+            <h2 className="text-lg font-black text-slate-950">{title}</h2>
+          </div>
+          <p className="mt-1 text-sm leading-6 text-slate-600">{description}</p>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 function Field({
   label,
   name,
   required,
   placeholder,
   type = 'text',
+  inputMode,
+  autoComplete,
 }: {
   label: string;
   name: string;
   required?: boolean;
   placeholder?: string;
   type?: string;
+  inputMode?: 'none' | 'text' | 'tel' | 'url' | 'email' | 'numeric' | 'decimal' | 'search';
+  autoComplete?: string;
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-semibold text-slate-700">{label}</span>
+      <span className="text-sm font-semibold text-slate-700">{label}{required ? <span className="text-rose-600"> *</span> : null}</span>
       <input
         name={name}
         type={type}
         required={required}
         placeholder={placeholder}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
         className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none ring-civic-600 transition focus:ring-2"
       />
     </label>
