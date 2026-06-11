@@ -368,3 +368,54 @@ export type CitizenCertificateSummaryRow = {
   created_at: string;
   updated_at: string;
 };
+
+export type CitizenNotificationRow = {
+  id: string;
+  user_id: string;
+  title: string;
+  body: string;
+  related_type: 'complaint' | 'certificate' | 'profile' | 'system' | null;
+  related_id: string | null;
+  is_read: boolean;
+  created_at: string;
+};
+
+export type CitizenComplaintDetailRow = CitizenComplaintSummaryRow & {
+  full_name: string;
+  mobile: string;
+  cnic: string | null;
+  mohalla: string | null;
+  details: string;
+  assigned_department: string | null;
+  resolved_at: string | null;
+};
+
+export type CitizenComplaintTimelineRow = {
+  id: string;
+  complaint_id: string;
+  status: string;
+  public_remarks: string | null;
+  changed_at: string;
+};
+
+export type CitizenCertificateDetailRow = CitizenCertificateSummaryRow & {
+  applicant_name: string;
+  applicant_mobile: string;
+  applicant_cnic: string | null;
+  applicant_relation: string | null;
+  applicant_address: string;
+  area: string;
+  mohalla: string | null;
+  councilor_status: 'pending' | 'verified' | 'rejected';
+  councilor_remarks: string | null;
+  subject_cnic: string | null;
+  event_date: string;
+  event_place: string;
+  form_data: Record<string, unknown> | null;
+  town_remarks: string | null;
+  issued_certificate_path: string | null;
+};
+
+export type CitizenCertificateDocumentRow = CertificateDocumentRow & {
+  signed_url?: string | null;
+};

@@ -1,14 +1,24 @@
-# Citizen Login / Profile System v1
+# Citizen Login / Profile System v2
 
 ## Added
 
-- Citizen login/signup page: `/citizen/login`
-- Citizen dashboard: `/citizen/dashboard`
-- Citizen profile page: `/citizen/profile`
-- Citizen profile database table and RLS policies
-- Citizen record linking for complaints and certificates
-- Claim old tracking records using tracking number + mobile number
-- Auto-link new complaint/certificate submissions when logged in
+- Private citizen complaint detail page: `/citizen/complaints/:id`
+- Private citizen certificate detail page: `/citizen/certificates/:id`
+- Citizen notification center: `/citizen/notifications`
+- Profile completion percentage on dashboard
+- Action-required certificate alerts for `need_more_info`
+- Need-correction citizen response form
+- Correction document upload support
+- Timeline/detail RPCs for citizen-owned records
+- Notification table + automatic timeline notification triggers
+
+## Updated
+
+- `src/App.tsx` route registration
+- `src/components/Layout.tsx` citizen navigation
+- `src/lib/citizenAuth.ts` citizen service functions
+- `src/lib/types.ts` v2 citizen types
+- `src/pages/CitizenDashboard.tsx` redesigned dashboard
 
 ## SQL
 
@@ -20,17 +30,11 @@ PGPASSWORD=postgres psql \
   -p 55322 \
   -U postgres \
   -d postgres \
-  -f supabase/citizen-auth-profile-v1.sql
+  -f supabase/citizen-login-profile-v2.sql
 ```
 
-## Test checklist
+## Build check
 
-1. Open `/citizen/login`.
-2. Signup a citizen user.
-3. Open `/citizen/profile` and save profile.
-4. Submit a new complaint while logged in.
-5. Open `/citizen/dashboard` and confirm complaint appears.
-6. Submit a certificate application while logged in.
-7. Confirm certificate appears on dashboard.
-8. Link an old tracking number with mobile using the claim form.
-9. Logout and confirm dashboard redirects to login.
+- `npm run typecheck` passed
+- `npm run build` passed
+- Vite chunk-size warning only, no build error

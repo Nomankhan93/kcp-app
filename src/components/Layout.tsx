@@ -23,7 +23,8 @@ const publicUpdateItems: NavItem[] = [
 ];
 
 const citizenServiceItems: NavItem[] = [
-  { to: '/citizen/dashboard', label: 'Citizen Login / Profile', matchPrefix: true },
+  { to: '/citizen/dashboard', label: 'Citizen Dashboard', matchPrefix: true },
+  { to: '/citizen/notifications', label: 'Citizen Notifications', matchPrefix: true },
   { to: '/submit', label: 'Submit Complaint' },
   { to: '/track', label: 'Track Complaint' },
   { to: '/certificates/apply', label: 'Apply Certificate' },
